@@ -1,14 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export default function NotificationsScreen({ onBack }: any) {
-  const notifications = [
-    { id: '1', icon: 'checkmark-circle', iconColor: '#00C875', text: 'Alex Rivera accepted your $25.50 request', time: '2m ago', unread: true },
-    { id: '2', icon: 'alarm-outline', iconColor: '#FF4D4D', text: 'Casey Park sent you a reminder to settle up', time: '1h ago', unread: true },
-    { id: '3', icon: 'cash-outline', iconColor: '#999', text: 'Jordan Lee paid you $45.50', time: '3h ago', unread: false },
-    { id: '4', icon: 'create-outline', iconColor: '#999', text: 'Sam Chen logged a new expense: Rent $120.00', time: 'yesterday', unread: false },
-    { id: '5', icon: 'cafe-outline', iconColor: '#999', text: 'Morgan Wu confirmed your bubble tea request', time: '2 days ago', unread: false },
-  ];
+export default function NotificationsScreen({ onBack, notifications, setNotifications }: any) {
+  
+  const unreadCount = notifications.filter((n: any) => n.unread).length;
+
+  const markAllRead = () => {
+    setNotifications(notifications.map((n: any) => ({ ...n, unread: false })));
+  };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -21,19 +20,19 @@ export default function NotificationsScreen({ onBack }: any) {
         <View style={styles.headerTitleRow}>
           <View>
             <Text style={styles.title}>Notifications</Text>
-            <Text style={styles.subtitle}>2 unread</Text>
+            <Text style={styles.subtitle}>{unreadCount} unread</Text>
           </View>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={markAllRead}>
             <Text style={styles.markReadText}>Mark all read</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.list}>
-        {notifications.map(notif => (
+        {notifications.map((notif: any) => (
           <View key={notif.id} style={[styles.card, notif.unread && styles.cardUnread]}>
             <View style={styles.iconContainer}>
-              <Ionicons name={notif.icon as any} size={24} color={notif.iconColor} />
+              <Ionicons name={notif.icon} size={24} color={notif.iconColor} />
               {notif.unread && <View style={styles.unreadDot} />}
             </View>
             <View style={styles.textContainer}>
@@ -49,8 +48,8 @@ export default function NotificationsScreen({ onBack }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f9fc' },
-  header: { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 20 },
-  backBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  header: { paddingHorizontal: 20, paddingTop: 80, paddingBottom: 20, zIndex: 10 }, // Increased paddingTop to 80 for the notch
+  backBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, zIndex: 10 },
   backText: { color: '#6b4eff', fontSize: 16, fontWeight: '500' },
   headerTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   title: { fontSize: 24, fontWeight: 'bold', color: '#1a1a1a' },

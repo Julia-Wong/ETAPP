@@ -12,7 +12,17 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('Home');
   const [sendParams, setSendParams] = useState<'they' | 'i'>('they');
 
-  // This custom navigation function passes variables to screens
+  // Shared Notifications State
+  const [notifications, setNotifications] = useState([
+    { id: '1', icon: 'checkmark-circle', iconColor: '#00C875', text: 'Alex Rivera accepted your $25.50 request', time: '2m ago', unread: true },
+    { id: '2', icon: 'alarm-outline', iconColor: '#FF4D4D', text: 'Casey Park sent you a reminder to settle up', time: '1h ago', unread: true },
+    { id: '3', icon: 'cash-outline', iconColor: '#999', text: 'Jordan Lee paid you $45.50', time: '3h ago', unread: false },
+    { id: '4', icon: 'create-outline', iconColor: '#999', text: 'Sam Chen logged a new expense: Rent $120.00', time: 'yesterday', unread: false },
+    { id: '5', icon: 'cafe-outline', iconColor: '#999', text: 'Morgan Wu confirmed your bubble tea request', time: '2 days ago', unread: false },
+  ]);
+
+  const unreadCount = notifications.filter(n => n.unread).length;
+
   const navigateToTab = (tab: string, params?: any) => {
     if (params?.whoOwes) setSendParams(params.whoOwes);
     setActiveTab(tab);
@@ -20,13 +30,13 @@ export default function App() {
 
   const renderScreen = () => {
     switch (activeTab) {
-      case 'Home': return <HomeScreen onNavigate={navigateToTab} />;
-      case 'Notifications': return <NotificationsScreen onBack={() => setActiveTab('Home')} />;
+      case 'Home': return <HomeScreen onNavigate={navigateToTab} unreadCount={unreadCount} />;
+      case 'Notifications': return <NotificationsScreen onBack={() => setActiveTab('Home')} notifications={notifications} setNotifications={setNotifications} />;
       case 'History': return <HistoryScreen />;
       case 'Send': return <SendScreen initialWhoOwes={sendParams} />;
       case 'Friends': return <FriendsScreen />;
       case 'Profile': return <ProfileScreen />;
-      default: return <HomeScreen onNavigate={navigateToTab} />;
+      default: return <HomeScreen onNavigate={navigateToTab} unreadCount={unreadCount} />;
     }
   };
 
@@ -41,8 +51,6 @@ export default function App() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>{renderScreen()}</View>
-
-      {/* Hide bottom tabs if on Notifications screen */}
       {activeTab !== 'Notifications' && (
         <View style={styles.tabBar}>
           {tabs.map((tab) => (
@@ -63,7 +71,6 @@ export default function App() {
   );
 }
 
-// ... Keep your exact same styles from index.tsx here (container, tabBar, centerButton, etc) ...
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f9fc' },
   content: { flex: 1 },
