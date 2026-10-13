@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export default function HomeScreen() {
+export default function HomeScreen({ onNavigate }: any) {
   return (
     <ScrollView style={styles.container} bounces={false} showsVerticalScrollIndicator={false}>
       {/* Top Purple Section */}
@@ -11,10 +11,14 @@ export default function HomeScreen() {
             <Text style={styles.greeting}>Good morning,</Text>
             <Text style={styles.name}>Jamie 👋</Text>
           </View>
-          <TouchableOpacity style={styles.notificationBtn}>
+          <TouchableOpacity 
+            style={styles.notificationBtn} 
+            onPress={() => onNavigate('Notifications')}
+            activeOpacity={0.7}
+          >
             <Ionicons name="notifications-outline" size={24} color="white" />
             <View style={styles.notificationBadge}>
-              <Text style={styles.badgeText}>1</Text>
+              <Text style={styles.badgeText}>2</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -41,25 +45,25 @@ export default function HomeScreen() {
       <View style={styles.mainContent}>
         {/* Quick Actions */}
         <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.actionItem}>
+          <TouchableOpacity style={styles.actionItem} onPress={() => onNavigate('Send', { whoOwes: 'i' })}>
             <View style={[styles.actionIconBg, { backgroundColor: '#F0EFFF' }]}>
               <Ionicons name="trending-up" size={24} color="#6b4eff" />
             </View>
             <Text style={styles.actionText}>Log Debt</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionItem}>
+          <TouchableOpacity style={styles.actionItem} onPress={() => onNavigate('Send', { whoOwes: 'they' })}>
             <View style={[styles.actionIconBg, { backgroundColor: '#EFFFF4' }]}>
               <Ionicons name="trending-down" size={24} color="#28a745" />
             </View>
             <Text style={styles.actionText}>Request</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionItem}>
+          <TouchableOpacity style={styles.actionItem} onPress={() => onNavigate('History')}>
             <View style={[styles.actionIconBg, { backgroundColor: '#FFF6E5' }]}>
               <Ionicons name="time-outline" size={24} color="#F5A623" />
             </View>
             <Text style={styles.actionText}>History</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionItem}>
+          <TouchableOpacity style={styles.actionItem} onPress={() => onNavigate('Friends')}>
             <View style={[styles.actionIconBg, { backgroundColor: '#FFEBEB' }]}>
               <Ionicons name="compass-outline" size={24} color="#dc3545" />
             </View>
@@ -93,7 +97,7 @@ export default function HomeScreen() {
         {/* Friends Section */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Friends</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => onNavigate('Friends')}>
             <Text style={styles.seeAllText}>See all</Text>
           </TouchableOpacity>
         </View>
@@ -131,19 +135,23 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#6b4eff', // Base purple to support top area[cite: 4]
+    backgroundColor: '#6b4eff', 
   },
   headerBackground: {
-    paddingTop: 20,
+    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 40,
     backgroundColor: '#6b4eff',
+    zIndex: 10,
+    elevation: 10,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 30,
+    zIndex: 10,
+    elevation: 10,
   },
   greeting: {
     color: 'rgba(255, 255, 255, 0.8)',
@@ -162,6 +170,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 999,
+    elevation: 999,
   },
   notificationBadge: {
     position: 'absolute',
@@ -185,6 +195,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 24,
     padding: 24,
+    zIndex: 10,
+    elevation: 10,
   },
   balanceTitle: {
     color: 'rgba(255, 255, 255, 0.7)',
@@ -231,9 +243,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 32,
     paddingHorizontal: 20,
     paddingTop: 30,
-    paddingBottom: 100, // Extra padding for the bottom tab bar
-    marginTop: -20, // Overlap the purple background slightly[cite: 4]
+    paddingBottom: 100, 
+    marginTop: -20, 
     minHeight: 600,
+    zIndex: 1,
+    elevation: 1,
   },
   actionRow: {
     flexDirection: 'row',
@@ -247,7 +261,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     marginBottom: 30,
     elevation: 3,
-    marginTop: -60, // Pull up over the white curve[cite: 4]
+    marginTop: -60, 
   },
   actionItem: {
     alignItems: 'center',
@@ -283,7 +297,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   responseCard: {
-    backgroundColor: '#FFFBE6', // Light yellow tint[cite: 4]
+    backgroundColor: '#FFFBE6', 
     borderRadius: 24,
     padding: 20,
     flexDirection: 'row',
