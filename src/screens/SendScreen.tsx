@@ -2,26 +2,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-export default function SendScreen({ initialWhoOwes = 'they' }: any) {
-  // Navigation Steps: 1 = Main Input, 2 = Confirm, 3 = Success
+export default function SendScreen({ initialWhoOwes = 'they', onAddTransaction }: any) {
   const [step, setStep] = useState(1);
-  
   const [selectedFriend, setSelectedFriend] = useState<string | null>(null);
   const [whoOwes, setWhoOwes] = useState<'they' | 'i'>(initialWhoOwes);
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
 
-  // Update toggle if navigated from home screen buttons
   useEffect(() => {
     setWhoOwes(initialWhoOwes);
   }, [initialWhoOwes]);
 
   const friends = [
-    { id: '1', initials: 'AR', name: 'Alex', handle: '@alexr', color: '#9B51E0' },
-    { id: '2', initials: 'JL', name: 'Jordan', handle: '@jlee', color: '#00C875' },
-    { id: '3', initials: 'SC', name: 'Sam', handle: '@samc', color: '#F5A623' },
-    { id: '4', initials: 'MW', name: 'Morgan', handle: '@mwu', color: '#FF4D4D' },
-    { id: '5', initials: 'CP', name: 'Casey', handle: '@caseyp', color: '#00A8FF' },
+    { id: '1', initials: 'AR', name: 'Alex', handle: '@alexr', color: '#9B51E0', code: '#AR2934' },
+    { id: '2', initials: 'JL', name: 'Jordan', handle: '@jlee', color: '#00C875', code: '#JL7823' },
+    { id: '3', initials: 'SC', name: 'Sam', handle: '@samc', color: '#F5A623', code: '#SC1205' },
+    { id: '4', initials: 'MW', name: 'Morgan', handle: '@mwu', color: '#FF4D4D', code: '#MW8834' },
+    { id: '5', initials: 'CP', name: 'Casey', handle: '@caseyp', color: '#00A8FF', code: '#CP3304' },
   ];
 
   const handleNumpadPress = (val: string) => {
@@ -35,26 +32,39 @@ export default function SendScreen({ initialWhoOwes = 'they' }: any) {
     }
   };
 
-  const resetTransaction = () => {
-    setStep(1);
-    setSelectedFriend(null);
-    setAmount('');
-    setNote('');
-  };
-
   const selectedFriendObj = friends.find(f => f.id === selectedFriend);
   const isReady = selectedFriend !== null && amount.length > 0 && amount !== '.';
   
-  // Dynamic text and colors based on toggle
   const amountColor = whoOwes === 'they' ? '#00C875' : '#FF4D4D';
   const amountPrefix = whoOwes === 'they' ? '+' : '-';
-  const helperText = selectedFriendObj 
-    ? (whoOwes === 'they' ? `${selectedFriendObj.name} owes you` : `You owe ${selectedFriendObj.name}`) 
-    : 'Select a friend';
+  const helperText = selectedFriendObj ? (whoOwes === 'they' ? `${selectedFriendObj.name} owes you` : `You owe ${selectedFriendObj.name}`) : 'Select a friend';
 
   const displayAmount = amount ? amount : '0';
 
-  // --- STEP 1: MAIN SEND SCREEN ---
+  // Format the new transaction and send it to the Brain
+  const handleConfirmSend = () => {
+    if (!selectedFriendObj) return;
+    const isThey = whoOwes === 'they';
+    const newTx = {
+      id: Date.now().toString(),
+      friendId: selectedFriendObj.id,
+      initials: selectedFriendObj.initials,
+      color: selectedFriendObj.color,
+      name: selectedFriendObj.name,
+      handle: selectedFriendObj.handle,
+      code: selectedFriendObj.code,
+      note: `"${note || 'Shared Expense'}"`,
+      amount: `${isThey ? '+' : '-'}$${amount}`,
+      status: isThey ? 'owes you' : 'you owe',
+      isPositive: isThey,
+      rawAmount: parseFloat(amount)
+    };
+    
+    // Save to brain
+    if (onAddTransaction) onAddTransaction(newTx);
+    setStep(3);
+  };
+
   if (step === 1) {
     return (
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -63,101 +73,54 @@ export default function SendScreen({ initialWhoOwes = 'they' }: any) {
           <Text style={styles.subtitle}>Log a debt between you and a friend</Text>
         </View>
 
-        {/* Friends Selection */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>WITH</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.friendsList}>
             {friends.map((friend) => {
               const isSelected = selectedFriend === friend.id;
               return (
-                <TouchableOpacity 
-                  key={friend.id} 
-                  style={styles.friendItem}
-                  onPress={() => setSelectedFriend(friend.id)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[
-                    styles.avatar, 
-                    { backgroundColor: friend.color },
-                    isSelected && { borderWidth: 3, borderColor: '#6b4eff' }
-                  ]}>
+                <TouchableOpacity key={friend.id} style={styles.friendItem} onPress={() => setSelectedFriend(friend.id)} activeOpacity={0.7}>
+                  <View style={[styles.avatar, { backgroundColor: friend.color }, isSelected && { borderWidth: 3, borderColor: '#6b4eff' }]}>
                     <Text style={styles.avatarText}>{friend.initials}</Text>
                   </View>
-                  <Text style={[styles.friendName, isSelected && { color: '#6b4eff', fontWeight: 'bold' }]}>
-                    {friend.name}
-                  </Text>
+                  <Text style={[styles.friendName, isSelected && { color: '#6b4eff', fontWeight: 'bold' }]}>{friend.name}</Text>
                 </TouchableOpacity>
               );
             })}
           </ScrollView>
         </View>
 
-        {/* Who Owes Toggle */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>WHO OWES?</Text>
           <View style={styles.toggleContainer}>
-            <TouchableOpacity 
-              style={[styles.toggleBtn, whoOwes === 'they' && { backgroundColor: '#00C875', borderColor: '#00C875' }]}
-              onPress={() => setWhoOwes('they')}
-              activeOpacity={0.8}
-            >
+            <TouchableOpacity style={[styles.toggleBtn, whoOwes === 'they' && { backgroundColor: '#00C875', borderColor: '#00C875' }]} onPress={() => setWhoOwes('they')} activeOpacity={0.8}>
               <Text style={[styles.toggleText, whoOwes === 'they' && { color: 'white' }]}>They owe me</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.toggleBtn, whoOwes === 'i' && { backgroundColor: '#FF4D4D', borderColor: '#FF4D4D' }]}
-              onPress={() => setWhoOwes('i')}
-              activeOpacity={0.8}
-            >
+            <TouchableOpacity style={[styles.toggleBtn, whoOwes === 'i' && { backgroundColor: '#FF4D4D', borderColor: '#FF4D4D' }]} onPress={() => setWhoOwes('i')} activeOpacity={0.8}>
               <Text style={[styles.toggleText, whoOwes === 'i' && { color: 'white' }]}>I owe them</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Amount Display */}
         <View style={styles.amountContainer}>
-          <Text style={[styles.amountText, { color: amount ? amountColor : '#e0e0e0' }]}>
-            {amount ? amountPrefix : ''}${displayAmount}
-          </Text>
+          <Text style={[styles.amountText, { color: amount ? amountColor : '#e0e0e0' }]}>{amount ? amountPrefix : ''}${displayAmount}</Text>
           <Text style={styles.helperText}>{helperText}</Text>
         </View>
 
-        {/* Note Input */}
         <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="What's this for? e.g. For bubble tea 🧋"
-            placeholderTextColor="#b0b0b0"
-            value={note}
-            onChangeText={setNote}
-          />
+          <TextInput style={styles.textInput} placeholder="What's this for? e.g. For bubble tea 🧋" placeholderTextColor="#b0b0b0" value={note} onChangeText={setNote} />
         </View>
 
-        {/* Numpad */}
         <View style={styles.numpad}>
           {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'back'].map((key) => (
-            <TouchableOpacity 
-              key={key} 
-              style={styles.numKey}
-              onPress={() => handleNumpadPress(key)}
-            >
-              {key === 'back' ? (
-                <Ionicons name="backspace-outline" size={24} color="#333" />
-              ) : (
-                <Text style={styles.numText}>{key}</Text>
-              )}
+            <TouchableOpacity key={key} style={styles.numKey} onPress={() => handleNumpadPress(key)}>
+              {key === 'back' ? <Ionicons name="backspace-outline" size={24} color="#333" /> : <Text style={styles.numText}>{key}</Text>}
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Action Button */}
-        <TouchableOpacity 
-          style={[styles.submitBtn, isReady && styles.submitBtnReady]}
-          disabled={!isReady}
-          onPress={() => setStep(2)}
-        >
-          <Text style={styles.submitBtnText}>
-            {isReady ? `Continue · ${helperText} $${amount}` : 'Select a friend and amount'}
-          </Text>
+        <TouchableOpacity style={[styles.submitBtn, isReady && styles.submitBtnReady]} disabled={!isReady} onPress={() => setStep(2)}>
+          <Text style={styles.submitBtnText}>{isReady ? `Continue · ${helperText} $${amount}` : 'Select a friend and amount'}</Text>
         </TouchableOpacity>
         
         <View style={styles.bottomSpacer} />
@@ -165,7 +128,6 @@ export default function SendScreen({ initialWhoOwes = 'they' }: any) {
     );
   }
 
-  // --- STEP 2: CONFIRM SCREEN ---
   if (step === 2 && selectedFriendObj) {
     return (
       <View style={styles.container}>
@@ -178,7 +140,6 @@ export default function SendScreen({ initialWhoOwes = 'they' }: any) {
         </View>
 
         <View style={styles.confirmContent}>
-          {/* Friend Summary Card */}
           <View style={styles.confirmFriendCard}>
             <View style={[styles.avatarLarge, { backgroundColor: selectedFriendObj.color }]}>
               <Text style={styles.avatarTextLarge}>{selectedFriendObj.initials}</Text>
@@ -190,27 +151,14 @@ export default function SendScreen({ initialWhoOwes = 'they' }: any) {
             </View>
           </View>
 
-          {/* Details Block */}
           <View style={styles.detailsBlock}>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Amount</Text>
-              <Text style={styles.detailValue}>${amount}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Who owes</Text>
-              <Text style={styles.detailValue}>{helperText}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Message</Text>
-              <Text style={styles.detailValue}>"{note || 'No message'}"</Text>
-            </View>
-            <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
-              <Text style={styles.detailLabel}>Status after send</Text>
-              <Text style={styles.detailValue}>Pending their confirmation</Text>
-            </View>
+            <View style={styles.detailRow}><Text style={styles.detailLabel}>Amount</Text><Text style={styles.detailValue}>${amount}</Text></View>
+            <View style={styles.detailRow}><Text style={styles.detailLabel}>Who owes</Text><Text style={styles.detailValue}>{helperText}</Text></View>
+            <View style={styles.detailRow}><Text style={styles.detailLabel}>Message</Text><Text style={styles.detailValue}>"{note || 'No message'}"</Text></View>
+            <View style={[styles.detailRow, { borderBottomWidth: 0 }]}><Text style={styles.detailLabel}>Status after send</Text><Text style={styles.detailValue}>Pending their confirmation</Text></View>
           </View>
 
-          <TouchableOpacity style={styles.sendBtn} onPress={() => setStep(3)}>
+          <TouchableOpacity style={styles.sendBtn} onPress={handleConfirmSend}>
             <Text style={styles.sendBtnText}>Send Request</Text>
           </TouchableOpacity>
         </View>
@@ -218,29 +166,19 @@ export default function SendScreen({ initialWhoOwes = 'they' }: any) {
     );
   }
 
-  // --- STEP 3: SUCCESS SCREEN ---
   if (step === 3 && selectedFriendObj) {
     return (
       <View style={styles.successContainer}>
         <View style={styles.successContent}>
-          <View style={styles.successIconBg}>
-            <Ionicons name="checkmark" size={40} color="#00C875" />
-          </View>
-          
+          <View style={styles.successIconBg}><Ionicons name="checkmark" size={40} color="#00C875" /></View>
           <Text style={styles.successTitle}>Request Sent!</Text>
-          
-          <Text style={styles.successSubtitle}>
-            {selectedFriendObj.name} will be asked to confirm they owe you ${amount}
-          </Text>
-          
+          <Text style={styles.successSubtitle}>{selectedFriendObj.name} will be asked to confirm they owe you ${amount}</Text>
           {note ? <Text style={styles.successNote}>"{note}"</Text> : null}
-
           <View style={styles.pendingBadge}>
             <Ionicons name="time-outline" size={16} color="#F5A623" style={{ marginRight: 6 }} />
             <Text style={styles.pendingBadgeText}>Waiting for {selectedFriendObj.name}'s confirmation</Text>
           </View>
-
-          <TouchableOpacity style={styles.newTransactionBtn} onPress={resetTransaction}>
+          <TouchableOpacity style={styles.newTransactionBtn} onPress={() => { setStep(1); setSelectedFriend(null); setAmount(''); setNote(''); }}>
             <Text style={styles.newTransactionText}>New Transaction</Text>
           </TouchableOpacity>
         </View>
@@ -278,8 +216,6 @@ const styles = StyleSheet.create({
   submitBtnReady: { backgroundColor: '#6b4eff' },
   submitBtnText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
   bottomSpacer: { height: 120 },
-
-  /* Confirm Step Styles */
   backBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   backText: { color: '#6b4eff', fontSize: 16, fontWeight: '500' },
   confirmContent: { paddingHorizontal: 20 },
@@ -295,8 +231,6 @@ const styles = StyleSheet.create({
   detailValue: { fontSize: 14, fontWeight: '600', color: '#333' },
   sendBtn: { backgroundColor: '#6b4eff', paddingVertical: 16, borderRadius: 16, alignItems: 'center' },
   sendBtnText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
-
-  /* Success Step Styles */
   successContainer: { flex: 1, backgroundColor: '#f8f9fc', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
   successContent: { width: '100%', alignItems: 'center' },
   successIconBg: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#D4F5E1', justifyContent: 'center', alignItems: 'center', marginBottom: 24 },
@@ -306,5 +240,5 @@ const styles = StyleSheet.create({
   pendingBadge: { flexDirection: 'row', alignItems: 'center', marginBottom: 40 },
   pendingBadgeText: { color: '#F5A623', fontSize: 13, fontWeight: '600' },
   newTransactionBtn: { width: '100%', backgroundColor: '#6b4eff', paddingVertical: 16, borderRadius: 16, alignItems: 'center' },
-  newTransactionText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  newTransactionText: { color: 'white', fontSize: 16, fontWeight: 'bold' }
 });

@@ -2,34 +2,24 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export default function HistoryScreen({ initialFriend = null, onBack }: any) {
+export default function HistoryScreen({ initialFriend = null, onBack, settledFriends, setSettledFriends, transactions }: any) {
   const [selectedFriend, setSelectedFriend] = useState<any>(initialFriend);
   const [settleModalVisible, setSettleModalVisible] = useState(false);
-  const [settledFriends, setSettledFriends] = useState<string[]>(['5']);
 
-  // Updates the screen if navigating directly from the Friends page
   useEffect(() => {
     setSelectedFriend(initialFriend);
   }, [initialFriend]);
 
-  const transactions = [
-    { id: '1', initials: 'AR', color: '#9B51E0', name: 'Alex Rivera', handle: '@alexr', code: '#AR2934', note: '"Dinner at Nobu 🍣"', amount: '+$25.50', status: 'owes you', isPositive: true, rawAmount: 25.50 },
-    { id: '2', initials: 'JL', color: '#00C875', name: 'Jordan Lee', handle: '@jlee', code: '#JL7823', note: '"Lunch split 🍜"', amount: '-$45.50', status: 'you owe', isPositive: false, rawAmount: 45.50 },
-    { id: '3', initials: 'SC', color: '#F5A623', name: 'Sam Chen', handle: '@samc', code: '#SC1205', note: '"Rent utilities ⚡"', amount: '+$120.00', status: 'owes you', isPositive: true, rawAmount: 120.00 },
-    { id: '4', initials: 'MW', color: '#FF4D4D', name: 'Morgan Wu', handle: '@mwu', code: '#MW8834', note: '"Coffee run ☕"', amount: '-$18.75', status: 'you owe', isPositive: false, rawAmount: 18.75 },
-    { id: '5', initials: 'CP', color: '#00A8FF', name: 'Casey Park', handle: '@caseyp', code: '#CP3304', note: '"Movie tickets 🎬"', amount: '+$22.00', status: 'owes you', isPositive: true, rawAmount: 22.00, hasBadge: true },
-  ];
-
   const handleSettleUp = () => {
-    if (selectedFriend) {
-      setSettledFriends([...settledFriends, selectedFriend.id]);
+    if (selectedFriend && !settledFriends.includes(selectedFriend.friendId)) {
+      setSettledFriends([...settledFriends, selectedFriend.friendId]);
     }
     setSettleModalVisible(false);
   };
 
   const handleBack = () => {
-    setSelectedFriend(null); // Clears the screen locally
-    if (onBack) onBack();    // Tells the Brain to forget the friend
+    setSelectedFriend(null); 
+    if (onBack) onBack();    
   };
 
   if (!selectedFriend) {
@@ -41,15 +31,13 @@ export default function HistoryScreen({ initialFriend = null, onBack }: any) {
         </View>
 
         <View style={styles.listContainer}>
-          {transactions.map((tx) => {
-            const isSettled = settledFriends.includes(tx.id);
+          {transactions.map((tx: any) => {
+            const isSettled = settledFriends.includes(tx.friendId);
 
             return (
               <TouchableOpacity key={tx.id} style={styles.card} activeOpacity={0.7} onPress={() => setSelectedFriend(tx)}>
                 <View>
-                  <View style={[styles.avatar, { backgroundColor: tx.color }]}>
-                    <Text style={styles.avatarText}>{tx.initials}</Text>
-                  </View>
+                  <View style={[styles.avatar, { backgroundColor: tx.color }]}><Text style={styles.avatarText}>{tx.initials}</Text></View>
                   {tx.hasBadge && !isSettled && (
                     <View style={styles.badge}><Text style={styles.badgeText}>1</Text></View>
                   )}
@@ -77,7 +65,7 @@ export default function HistoryScreen({ initialFriend = null, onBack }: any) {
     );
   }
 
-  const isCurrentlySettled = settledFriends.includes(selectedFriend.id);
+  const isCurrentlySettled = settledFriends.includes(selectedFriend.friendId);
 
   return (
     <>
@@ -89,9 +77,7 @@ export default function HistoryScreen({ initialFriend = null, onBack }: any) {
           </TouchableOpacity>
 
           <View style={styles.friendProfileInfo}>
-            <View style={[styles.avatarLarge, { backgroundColor: selectedFriend.color }]}>
-              <Text style={styles.avatarTextLarge}>{selectedFriend.initials}</Text>
-            </View>
+            <View style={[styles.avatarLarge, { backgroundColor: selectedFriend.color }]}><Text style={styles.avatarTextLarge}>{selectedFriend.initials}</Text></View>
             <View>
               <Text style={styles.friendNameLarge}>{selectedFriend.name}</Text>
               <Text style={styles.friendHandleLarge}>{selectedFriend.handle} · {selectedFriend.code}</Text>
@@ -100,12 +86,8 @@ export default function HistoryScreen({ initialFriend = null, onBack }: any) {
 
           <View style={[styles.balanceBanner, isCurrentlySettled && styles.balanceBannerSettled]}>
             <View>
-              <Text style={styles.bannerLabel}>
-                {isCurrentlySettled ? 'All settled up' : (selectedFriend.isPositive ? 'They owe you' : 'You owe them')}
-              </Text>
-              <Text style={[styles.bannerAmount, isCurrentlySettled && { color: '#666' }]}>
-                {isCurrentlySettled ? '$0.00' : selectedFriend.amount.replace('+', '').replace('-', '')}
-              </Text>
+              <Text style={styles.bannerLabel}>{isCurrentlySettled ? 'All settled up' : (selectedFriend.isPositive ? 'They owe you' : 'You owe them')}</Text>
+              <Text style={[styles.bannerAmount, isCurrentlySettled && { color: '#666' }]}>{isCurrentlySettled ? '$0.00' : selectedFriend.amount.replace('+', '').replace('-', '')}</Text>
             </View>
             {!isCurrentlySettled && (
               <TouchableOpacity style={styles.settleBtn} onPress={() => setSettleModalVisible(true)}>
@@ -127,12 +109,8 @@ export default function HistoryScreen({ initialFriend = null, onBack }: any) {
                 </View>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={[styles.historyAmount, { color: selectedFriend.isPositive ? '#28a745' : '#dc3545' }]}>
-                  {selectedFriend.amount}
-                </Text>
-                <Text style={styles.historyStatus}>
-                  {selectedFriend.isPositive ? `${selectedFriend.name.split(' ')[0]} owes you` : `You owe ${selectedFriend.name.split(' ')[0]}`}
-                </Text>
+                <Text style={[styles.historyAmount, { color: selectedFriend.isPositive ? '#28a745' : '#dc3545' }]}>{selectedFriend.amount}</Text>
+                <Text style={styles.historyStatus}>{selectedFriend.isPositive ? `${selectedFriend.name.split(' ')[0]} owes you` : `You owe ${selectedFriend.name.split(' ')[0]}`}</Text>
               </View>
             </View>
           </View>
@@ -150,16 +128,10 @@ export default function HistoryScreen({ initialFriend = null, onBack }: any) {
             </View>
 
             <View style={[styles.modalSummaryCard, !selectedFriend.isPositive && { backgroundColor: '#FFEBEB', borderColor: '#FFD6D6' }]}>
-              <View style={[styles.avatar, { backgroundColor: selectedFriend.color, width: 48, height: 48, borderRadius: 24, marginRight: 15 }]}>
-                <Text style={styles.avatarText}>{selectedFriend.initials}</Text>
-              </View>
+              <View style={[styles.avatar, { backgroundColor: selectedFriend.color, width: 48, height: 48, borderRadius: 24, marginRight: 15 }]}><Text style={styles.avatarText}>{selectedFriend.initials}</Text></View>
               <View>
-                <Text style={styles.modalSummaryLabel}>
-                  {selectedFriend.isPositive ? `${selectedFriend.name.split(' ')[0]} owes you` : `You owe ${selectedFriend.name.split(' ')[0]}`}
-                </Text>
-                <Text style={[styles.modalSummaryAmount, !selectedFriend.isPositive && { color: '#dc3545' }]}>
-                  ${selectedFriend.rawAmount.toFixed(2)}
-                </Text>
+                <Text style={styles.modalSummaryLabel}>{selectedFriend.isPositive ? `${selectedFriend.name.split(' ')[0]} owes you` : `You owe ${selectedFriend.name.split(' ')[0]}`}</Text>
+                <Text style={[styles.modalSummaryAmount, !selectedFriend.isPositive && { color: '#dc3545' }]}>${selectedFriend.rawAmount.toFixed(2)}</Text>
               </View>
             </View>
 
@@ -170,23 +142,16 @@ export default function HistoryScreen({ initialFriend = null, onBack }: any) {
                 <Text style={styles.paymentMethodTitle}>E-Transfer</Text>
                 <Text style={styles.paymentMethodSub}>{selectedFriend.name.split(' ')[0].toLowerCase()}@example.com</Text>
               </View>
-              <TouchableOpacity style={styles.copyBtn}>
-                <Ionicons name="copy-outline" size={14} color="#6b4eff" style={{ marginRight: 4 }} />
-                <Text style={styles.copyBtnText}>Copy</Text>
-              </TouchableOpacity>
+              <TouchableOpacity style={styles.copyBtn}><Ionicons name="copy-outline" size={14} color="#6b4eff" style={{ marginRight: 4 }} /><Text style={styles.copyBtnText}>Copy</Text></TouchableOpacity>
             </View>
 
             <View style={styles.amountRow}>
               <Text style={styles.amountRowLabel}>Amount to request</Text>
               <Text style={styles.amountRowValue}>${selectedFriend.rawAmount.toFixed(2)}</Text>
             </View>
-
             <View style={styles.infoBanner}>
-              <Text style={styles.infoBannerText}>
-                Once {selectedFriend.name.split(' ')[0]} sends you ${selectedFriend.rawAmount.toFixed(2)}, tap "Confirm Paid" below to mark the balance as settled.
-              </Text>
+              <Text style={styles.infoBannerText}>Once {selectedFriend.name.split(' ')[0]} sends you ${selectedFriend.rawAmount.toFixed(2)}, tap "Confirm Paid" below to mark the balance as settled.</Text>
             </View>
-
             <TouchableOpacity style={styles.confirmBtn} onPress={handleSettleUp}>
               <Ionicons name="checkmark-circle-outline" size={20} color="white" style={{ marginRight: 8 }} />
               <Text style={styles.confirmBtnText}>Confirm Paid · ${selectedFriend.rawAmount.toFixed(2)}</Text>

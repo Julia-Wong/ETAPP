@@ -2,17 +2,26 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export default function HomeScreen({ onNavigate, unreadCount, user }: any) {
+export default function HomeScreen({ onNavigate, user, hasPending, setHasPending, onAcceptPending, transactions, settledFriends, unreadCount }: any) {
   const [modalVisible, setModalVisible] = useState(false);
-  const [showPending, setShowPending] = useState(true);
-
-  // Extract just the first name
   const firstName = user?.name?.split(' ')[0] || 'Jamie';
 
-  const handleResolveRequest = () => {
-    setModalVisible(false);
-    setShowPending(false);
-  };
+  let youAreOwed = 0;
+  let youOwe = 0;
+
+  transactions.forEach((tx: any) => {
+    if (!settledFriends.includes(tx.friendId)) {
+      if (tx.isPositive) {
+        youAreOwed += tx.rawAmount;
+      } else {
+        youOwe += Math.abs(tx.rawAmount);
+      }
+    }
+  });
+
+  const netBalance = youAreOwed - youOwe;
+  const isNetPositive = netBalance >= 0;
+  const formatMoney = (num: number) => `$${Math.abs(num).toFixed(2)}`;
 
   return (
     <>
@@ -25,25 +34,28 @@ export default function HomeScreen({ onNavigate, unreadCount, user }: any) {
             </View>
             <TouchableOpacity style={styles.notificationBtn} onPress={() => onNavigate('Notifications')}>
               <Ionicons name="notifications-outline" size={24} color="white" />
-              {unreadCount > 0 && (
+              {/* Only show badge if there are unread notifications */}
+              {unreadCount && unreadCount > 0 ? (
                 <View style={styles.notificationBadge}>
                   <Text style={styles.badgeText}>{unreadCount}</Text>
                 </View>
-              )}
+              ) : null}
             </TouchableOpacity>
           </View>
 
           <View style={styles.balanceCard}>
             <Text style={styles.balanceTitle}>NET BALANCE</Text>
-            <Text style={styles.balanceAmount}>+$81.25</Text>
+            <Text style={styles.balanceAmount}>
+              {isNetPositive ? '+' : '-'}{formatMoney(netBalance)}
+            </Text>
             <View style={styles.splitBalances}>
               <View style={styles.splitBox}>
                 <Text style={styles.splitLabel}>You are owed</Text>
-                <Text style={styles.owedAmount}>$145.50</Text>
+                <Text style={styles.owedAmount}>{formatMoney(youAreOwed)}</Text>
               </View>
               <View style={styles.splitBox}>
                 <Text style={styles.splitLabel}>You owe</Text>
-                <Text style={styles.oweAmount}>$64.25</Text>
+                <Text style={styles.oweAmount}>{formatMoney(youOwe)}</Text>
               </View>
             </View>
           </View>
@@ -69,7 +81,7 @@ export default function HomeScreen({ onNavigate, unreadCount, user }: any) {
             </TouchableOpacity>
           </View>
 
-          {showPending && (
+          {hasPending && (
             <>
               <Text style={styles.sectionTitle}>Needs your response</Text>
               <TouchableOpacity style={styles.responseCard} onPress={() => setModalVisible(true)} activeOpacity={0.8}>
@@ -110,25 +122,24 @@ export default function HomeScreen({ onNavigate, unreadCount, user }: any) {
           </View>
 
           <Text style={[styles.sectionTitle, { marginTop: 30 }]}>Recent Activity</Text>
-          <TouchableOpacity style={styles.activityCard} onPress={() => onNavigate('History')}>
-            <View style={[styles.avatar, { backgroundColor: '#9B51E0' }]}><Text style={styles.avatarText}>AR</Text></View>
-            <View style={styles.activityDetails}>
-              <Text style={styles.activityMainText}>Alex Rivera → You</Text>
-              <Text style={styles.activitySubText}>"Dinner at Nobu 🍣" · Oct 14</Text>
-            </View>
-            <Text style={styles.amountPositive}>+$50.00</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.activityCard} onPress={() => onNavigate('History')}>
-            <View style={[styles.avatar, { backgroundColor: '#00C875' }]}><Text style={styles.avatarText}>JL</Text></View>
-            <View style={styles.activityDetails}>
-              <Text style={styles.activityMainText}>Jordan Lee → You</Text>
-              <Text style={styles.activitySubText}>"Lunch split 🍜" · Oct 12</Text>
-            </View>
-            <Text style={styles.amountPositive}>+$14.50</Text>
-          </TouchableOpacity>
+          {transactions.slice(0, 3).map((tx: any) => (
+            <TouchableOpacity key={tx.id} style={styles.activityCard} onPress={() => onNavigate('History')}>
+              <View style={[styles.avatar, { backgroundColor: tx.color }]}><Text style={styles.avatarText}>{tx.initials}</Text></View>
+              <View style={styles.activityDetails}>
+                <Text style={styles.activityMainText}>
+                  {tx.isPositive ? `${tx.name} → You` : `You → ${tx.name}`}
+                </Text>
+                <Text style={styles.activitySubText}>{tx.note} · Recent</Text>
+              </View>
+              <Text style={tx.isPositive ? styles.amountPositive : styles.amountNegative}>
+                {tx.amount}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </ScrollView>
 
+      {/* The Confirmation Popup Modal */}
       <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -153,11 +164,12 @@ export default function HomeScreen({ onNavigate, unreadCount, user }: any) {
               <Text style={styles.modalWarningText}><Text style={{fontWeight: 'bold', color: '#B86B11'}}>What does this mean? </Text> Casey is saying they owe you $22.00. Accept to add it to your running balance.</Text>
             </View>
             <View style={styles.modalActionRow}>
-              <TouchableOpacity style={styles.modalDeclineBtn} onPress={handleResolveRequest}>
+              {/* These modal buttons execute the backend math! */}
+              <TouchableOpacity style={styles.modalDeclineBtn} onPress={() => { setModalVisible(false); setHasPending(false); }}>
                 <Ionicons name="close" size={20} color="#dc3545" style={{marginRight: 6}} />
                 <Text style={styles.modalDeclineText}>Decline</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalAcceptBtn} onPress={handleResolveRequest}>
+              <TouchableOpacity style={styles.modalAcceptBtn} onPress={() => { setModalVisible(false); onAcceptPending(); }}>
                 <Ionicons name="checkmark" size={20} color="white" style={{marginRight: 6}} />
                 <Text style={styles.modalAcceptText}>Accept</Text>
               </TouchableOpacity>

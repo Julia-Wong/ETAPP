@@ -5,7 +5,6 @@ import { ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View
 export default function ProfileScreen({ onLogout, user }: any) {
   const [currentView, setCurrentView] = useState<'main' | 'PersonalInfo' | 'Settings' | 'PaymentMethods' | 'Refer' | 'Rate'>('main');
 
-  // Pre-fill fields with user data
   const nameParts = user?.name?.split(' ') || ['Jamie', 'Doe'];
   const initialFirst = nameParts[0] || '';
   const initialLast = nameParts.slice(1).join(' ') || '';
@@ -20,10 +19,10 @@ export default function ProfileScreen({ onLogout, user }: any) {
   const [emailEnabled, setEmailEnabled] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
 
-  // initials for avatar
   const avatarInitials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'JD';
   const handleString = `@${firstName.toLowerCase()}${lastName.toLowerCase()}`;
 
+  // ... (Keep PersonalInfo, Settings, and PaymentMethods exactly as they were in the previous file) ...
   if (currentView === 'PersonalInfo') {
     return (
       <ScrollView style={styles.subContainer} showsVerticalScrollIndicator={false}>
@@ -46,14 +45,7 @@ export default function ProfileScreen({ onLogout, user }: any) {
           <Text style={styles.inputLabel}>PHONE NUMBER</Text>
           <View style={styles.inputWithIcon}>
             <Ionicons name="call-outline" size={20} color="#ccc" style={styles.inputIcon} />
-            <TextInput 
-              style={styles.innerInput} 
-              placeholder="+1 (555) 000-0000" 
-              placeholderTextColor="#ccc" 
-              value={phone} 
-              onChangeText={setPhone} 
-              keyboardType="phone-pad"
-            />
+            <TextInput style={styles.innerInput} placeholder="+1 (555) 000-0000" placeholderTextColor="#ccc" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
           </View>
 
           <Text style={styles.inputLabel}>EMAIL</Text>
@@ -166,13 +158,7 @@ export default function ProfileScreen({ onLogout, user }: any) {
         <View style={styles.formContent}>
           <Text style={styles.inputLabel}>E-TRANSFER EMAIL / PHONE NUMBER</Text>
           <View style={styles.paymentInputRow}>
-            <TextInput 
-              style={[styles.input, { flex: 1, marginBottom: 0 }]} 
-              placeholder="e.g. jamie@gmail.com" 
-              placeholderTextColor="#ccc"
-              value={eTransfer}
-              onChangeText={setETransfer}
-            />
+            <TextInput style={[styles.input, { flex: 1, marginBottom: 0 }]} placeholder="e.g. jamie@gmail.com" placeholderTextColor="#ccc" value={eTransfer} onChangeText={setETransfer} />
             <TouchableOpacity style={styles.paymentSaveBtn}>
               <Text style={styles.paymentSaveBtnText}>Save</Text>
             </TouchableOpacity>
@@ -192,9 +178,7 @@ export default function ProfileScreen({ onLogout, user }: any) {
                 <Ionicons name="copy-outline" size={20} color="#999" />
               </TouchableOpacity>
             </View>
-            <Text style={styles.savedPaymentNote}>
-              💡 Your friends will see this address when they tap "Settle Up" on a debt with you.
-            </Text>
+            <Text style={styles.savedPaymentNote}>💡 Your friends will see this address when they tap "Settle Up" on a debt with you.</Text>
           </View>
 
           <View style={styles.howItWorksBox}>
@@ -209,6 +193,7 @@ export default function ProfileScreen({ onLogout, user }: any) {
     );
   }
 
+  // --- NEW: REAL REFER A FRIEND SCREEN ---
   if (currentView === 'Refer') {
     return (
       <View style={styles.subContainer}>
@@ -217,16 +202,25 @@ export default function ProfileScreen({ onLogout, user }: any) {
             <Ionicons name="chevron-back" size={20} color="#6b4eff" />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
-          <Text style={styles.subTitle}>Refer a Friend</Text>
         </View>
-        <View style={styles.placeholderContent}>
-          <Ionicons name="gift-outline" size={64} color="#cbbaf5" />
-          <Text style={styles.placeholderText}>Referral program coming soon!</Text>
+        <View style={styles.referContent}>
+          <View style={styles.referGiftIcon}><Text style={{fontSize: 64}}>🎁</Text></View>
+          <Text style={styles.referAmount}>Earn $5.00</Text>
+          <Text style={styles.referTitle}>Invite friends, get paid</Text>
+          <Text style={styles.referDesc}>Get $5 deposited straight to your balance for every friend who signs up and logs their first debt.</Text>
+          
+          <TouchableOpacity style={styles.referShareBtn}>
+            <Ionicons name="share-outline" size={20} color="white" style={{ marginRight: 8 }} />
+            <Text style={styles.referShareBtnText}>Share Invite Link</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.referTerms}>Read Terms & Conditions</Text>
         </View>
       </View>
     );
   }
 
+  // --- NEW: REAL RATE THE APP SCREEN ---
   if (currentView === 'Rate') {
     return (
       <View style={styles.subContainer}>
@@ -235,16 +229,31 @@ export default function ProfileScreen({ onLogout, user }: any) {
             <Ionicons name="chevron-back" size={20} color="#6b4eff" />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
-          <Text style={styles.subTitle}>Rate the App</Text>
         </View>
-        <View style={styles.placeholderContent}>
-          <Ionicons name="star-half-outline" size={64} color="#F5A623" />
-          <Text style={styles.placeholderText}>App Store integration coming soon.</Text>
+        <View style={styles.rateContent}>
+          <Text style={styles.rateTitle}>Enjoying Tab?</Text>
+          <Text style={styles.rateSubtitle}>Tap a star to rate it on the App Store.</Text>
+          
+          <View style={styles.starsRow}>
+            <Ionicons name="star" size={44} color="#F5A623" />
+            <Ionicons name="star" size={44} color="#F5A623" />
+            <Ionicons name="star" size={44} color="#F5A623" />
+            <Ionicons name="star" size={44} color="#F5A623" />
+            <Ionicons name="star-outline" size={44} color="#F5A623" />
+          </View>
+
+          <TouchableOpacity style={styles.rateSubmitBtn}>
+            <Text style={styles.rateSubmitBtnText}>Submit Review</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setCurrentView('main')}>
+             <Text style={styles.rateLaterText}>Maybe Later</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
   }
 
+  // --- MAIN PROFILE VIEW ---
   return (
     <ScrollView style={styles.container} bounces={false} showsVerticalScrollIndicator={false}>
       <View style={styles.headerBackground}>
@@ -381,7 +390,7 @@ const styles = StyleSheet.create({
   signOutText: { color: '#dc3545', fontSize: 16, fontWeight: 'bold' },
   bottomSpacer: { height: 120 },
   subContainer: { flex: 1, backgroundColor: '#f8f9fc' },
-  subHeader: { paddingHorizontal: 20, paddingTop: 80, paddingBottom: 20, backgroundColor: 'white' },
+  subHeader: { paddingHorizontal: 20, paddingTop: 80, paddingBottom: 20, backgroundColor: 'transparent' },
   backBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   backText: { color: '#6b4eff', fontSize: 16, fontWeight: '500' },
   subTitle: { fontSize: 24, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 4 },
@@ -421,6 +430,22 @@ const styles = StyleSheet.create({
   savedPaymentNote: { fontSize: 13, color: '#666', lineHeight: 18 },
   howItWorksBox: { backgroundColor: '#F5F8FF', padding: 20, borderRadius: 16, marginTop: 30 },
   howItWorksText: { color: '#0047AB', fontSize: 14, lineHeight: 22 },
-  placeholderContent: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 100 },
-  placeholderText: { fontSize: 16, color: '#999', marginTop: 16, fontWeight: '500' }
+  
+  // Refer & Rate Styles
+  referContent: { padding: 20, alignItems: 'center', marginTop: 20 },
+  referGiftIcon: { backgroundColor: '#F0EFFF', width: 100, height: 100, borderRadius: 50, justifyContent: 'center', alignItems: 'center', marginBottom: 24 },
+  referAmount: { fontSize: 24, fontWeight: 'bold', color: '#00C875', marginBottom: 8 },
+  referTitle: { fontSize: 28, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 12 },
+  referDesc: { fontSize: 16, color: '#666', textAlign: 'center', lineHeight: 24, paddingHorizontal: 10, marginBottom: 40 },
+  referShareBtn: { flexDirection: 'row', backgroundColor: '#6b4eff', paddingVertical: 16, paddingHorizontal: 32, borderRadius: 16, alignItems: 'center', width: '100%', justifyContent: 'center', marginBottom: 24 },
+  referShareBtnText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  referTerms: { color: '#999', fontSize: 13, textDecorationLine: 'underline' },
+
+  rateContent: { padding: 20, alignItems: 'center', marginTop: 40 },
+  rateTitle: { fontSize: 32, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 12 },
+  rateSubtitle: { fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 40 },
+  starsRow: { flexDirection: 'row', gap: 12, marginBottom: 50 },
+  rateSubmitBtn: { backgroundColor: '#6b4eff', paddingVertical: 16, borderRadius: 16, alignItems: 'center', width: '100%', marginBottom: 20 },
+  rateSubmitBtnText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  rateLaterText: { color: '#666', fontSize: 15, fontWeight: '600' }
 });

@@ -11,7 +11,19 @@ import SendScreen from '../screens/SendScreen';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState({ name: 'Jamie Doe', email: 'jamie@example.com' }); // NEW: User State
+  const [user, setUser] = useState({ name: 'Jamie Doe', email: 'jamie@example.com' }); 
+
+  // --- GLOBAL STATE MEMORY ---
+  const [hasPending, setHasPending] = useState(true);
+  const [settledFriends, setSettledFriends] = useState<string[]>(['5']); // Casey is pre-settled initially so she doesn't hit the balance
+  
+  const [transactions, setTransactions] = useState([
+    { id: 'tx1', friendId: '1', initials: 'AR', color: '#9B51E0', name: 'Alex Rivera', handle: '@alexr', code: '#AR2934', note: '"Dinner at Nobu 🍣"', amount: '+$25.50', status: 'owes you', isPositive: true, rawAmount: 25.50 },
+    { id: 'tx2', friendId: '2', initials: 'JL', color: '#00C875', name: 'Jordan Lee', handle: '@jlee', code: '#JL7823', note: '"Lunch split 🍜"', amount: '-$45.50', status: 'you owe', isPositive: false, rawAmount: 45.50 },
+    { id: 'tx3', friendId: '3', initials: 'SC', color: '#F5A623', name: 'Sam Chen', handle: '@samc', code: '#SC1205', note: '"Rent utilities ⚡"', amount: '+$120.00', status: 'owes you', isPositive: true, rawAmount: 120.00 },
+    { id: 'tx4', friendId: '4', initials: 'MW', color: '#FF4D4D', name: 'Morgan Wu', handle: '@mwu', code: '#MW8834', note: '"Coffee run ☕"', amount: '-$18.75', status: 'you owe', isPositive: false, rawAmount: 18.75 },
+    { id: 'tx5', friendId: '5', initials: 'CP', color: '#00A8FF', name: 'Casey Park', handle: '@caseyp', code: '#CP3304', note: '"Movie tickets 🎬"', amount: '+$22.00', status: 'owes you', isPositive: true, rawAmount: 22.00, hasBadge: true },
+  ]);
 
   const [activeTab, setActiveTab] = useState('Home');
   const [sendParams, setSendParams] = useState<'they' | 'i'>('they');
@@ -19,44 +31,41 @@ export default function App() {
 
   const [notifications, setNotifications] = useState([
     { id: '1', icon: 'checkmark-circle', iconColor: '#00C875', text: 'Alex Rivera accepted your $25.50 request', time: '2m ago', unread: true },
-    { id: '2', icon: 'alarm-outline', iconColor: '#FF4D4D', text: 'Casey Park sent you a reminder to settle up', time: '1h ago', unread: true },
-    { id: '3', icon: 'cash-outline', iconColor: '#999', text: 'Jordan Lee paid you $45.50', time: '3h ago', unread: false },
-    { id: '4', icon: 'create-outline', iconColor: '#999', text: 'Sam Chen logged a new expense: Rent $120.00', time: 'yesterday', unread: false },
-    { id: '5', icon: 'cafe-outline', iconColor: '#999', text: 'Morgan Wu confirmed your bubble tea request', time: '2 days ago', unread: false },
   ]);
 
   const unreadCount = notifications.filter(n => n.unread).length;
 
+  const handleAddTransaction = (newTx: any) => {
+    setTransactions([newTx, ...transactions]);
+    setSettledFriends(prev => prev.filter(id => id !== newTx.friendId));
+  };
+
+  const handleAcceptPending = () => {
+    setHasPending(false);
+    // Un-settle Casey (friendId 5) so her $22 gets added to the running balance!
+    setSettledFriends(prev => prev.filter(id => id !== '5'));
+  };
+
   const navigateToTab = (tab: string, params?: any) => {
     if (params?.whoOwes) setSendParams(params.whoOwes);
-    if (params?.friend) {
-      setHistoryFriend(params.friend);
-    } else if (tab === 'History') {
-      setHistoryFriend(null); 
-    }
+    if (params?.friend) setHistoryFriend(params.friend);
+    else if (tab === 'History') setHistoryFriend(null); 
     setActiveTab(tab);
   };
 
   if (!isAuthenticated) {
-    return (
-      <AuthScreen 
-        onLogin={(userData: any) => {
-          setUser(userData);
-          setIsAuthenticated(true);
-        }} 
-      />
-    );
+    return <AuthScreen onLogin={(userData: any) => { setUser(userData); setIsAuthenticated(true); }} />;
   }
 
   const renderScreen = () => {
     switch (activeTab) {
-      case 'Home': return <HomeScreen onNavigate={navigateToTab} unreadCount={unreadCount} user={user} />;
+      case 'Home': return <HomeScreen onNavigate={navigateToTab} user={user} hasPending={hasPending} setHasPending={setHasPending} onAcceptPending={handleAcceptPending} transactions={transactions} settledFriends={settledFriends} unreadCount={unreadCount} />;
       case 'Notifications': return <NotificationsScreen onBack={() => setActiveTab('Home')} notifications={notifications} setNotifications={setNotifications} />;
-      case 'History': return <HistoryScreen initialFriend={historyFriend} onBack={() => setHistoryFriend(null)} />;
-      case 'Send': return <SendScreen initialWhoOwes={sendParams} />;
+      case 'History': return <HistoryScreen initialFriend={historyFriend} onBack={() => setHistoryFriend(null)} settledFriends={settledFriends} setSettledFriends={setSettledFriends} transactions={transactions} />;
+      case 'Send': return <SendScreen initialWhoOwes={sendParams} onAddTransaction={handleAddTransaction} />;
       case 'Friends': return <FriendsScreen onNavigate={navigateToTab} />;
       case 'Profile': return <ProfileScreen onLogout={() => setIsAuthenticated(false)} user={user} />;
-      default: return <HomeScreen onNavigate={navigateToTab} unreadCount={unreadCount} user={user} />;
+      default: return <HomeScreen onNavigate={navigateToTab} user={user} hasPending={hasPending} setHasPending={setHasPending} onAcceptPending={handleAcceptPending} transactions={transactions} settledFriends={settledFriends} unreadCount={unreadCount} />;
     }
   };
 
