@@ -1,16 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export default function HistoryScreen() {
-  // 1. State to manage which view we are on
-  const [selectedFriend, setSelectedFriend] = useState<any>(null);
-  
-  // 2. State to manage the Settle Up popup
+export default function HistoryScreen({ initialFriend = null, onBack }: any) {
+  const [selectedFriend, setSelectedFriend] = useState<any>(initialFriend);
   const [settleModalVisible, setSettleModalVisible] = useState(false);
-  
-  // 3. State to track who has been settled up (stores their IDs)
-  const [settledFriends, setSettledFriends] = useState<string[]>(['5']); // Casey is already settled
+  const [settledFriends, setSettledFriends] = useState<string[]>(['5']);
+
+  // Updates the screen if navigating directly from the Friends page
+  useEffect(() => {
+    setSelectedFriend(initialFriend);
+  }, [initialFriend]);
 
   const transactions = [
     { id: '1', initials: 'AR', color: '#9B51E0', name: 'Alex Rivera', handle: '@alexr', code: '#AR2934', note: '"Dinner at Nobu 🍣"', amount: '+$25.50', status: 'owes you', isPositive: true, rawAmount: 25.50 },
@@ -27,7 +27,11 @@ export default function HistoryScreen() {
     setSettleModalVisible(false);
   };
 
-  // --- VIEW 1: MAIN HISTORY LIST ---
+  const handleBack = () => {
+    setSelectedFriend(null); // Clears the screen locally
+    if (onBack) onBack();    // Tells the Brain to forget the friend
+  };
+
   if (!selectedFriend) {
     return (
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -50,18 +54,14 @@ export default function HistoryScreen() {
                     <View style={styles.badge}><Text style={styles.badgeText}>1</Text></View>
                   )}
                 </View>
-
                 <View style={styles.details}>
                   <Text style={styles.name}>{tx.name}</Text>
                   <Text style={styles.note}>{tx.note}</Text>
                 </View>
-
                 <View style={styles.rightSection}>
                   {!isSettled ? (
                     <>
-                      <Text style={[styles.amount, { color: tx.isPositive ? '#28a745' : '#dc3545' }]}>
-                        {tx.amount}
-                      </Text>
+                      <Text style={[styles.amount, { color: tx.isPositive ? '#28a745' : '#dc3545' }]}>{tx.amount}</Text>
                       <Text style={styles.status}>{tx.status}</Text>
                     </>
                   ) : (
@@ -77,14 +77,13 @@ export default function HistoryScreen() {
     );
   }
 
-  // --- VIEW 2: SPECIFIC FRIEND HISTORY ---
   const isCurrentlySettled = settledFriends.includes(selectedFriend.id);
 
   return (
     <>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.friendHeader}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => setSelectedFriend(null)}>
+          <TouchableOpacity style={styles.backBtn} onPress={handleBack}>
             <Ionicons name="chevron-back" size={20} color="#6b4eff" />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
@@ -99,7 +98,6 @@ export default function HistoryScreen() {
             </View>
           </View>
 
-          {/* Balance Banner */}
           <View style={[styles.balanceBanner, isCurrentlySettled && styles.balanceBannerSettled]}>
             <View>
               <Text style={styles.bannerLabel}>
@@ -117,13 +115,12 @@ export default function HistoryScreen() {
           </View>
         </View>
 
-        {/* Mock Transaction History for this specific friend */}
         <View style={styles.historyContent}>
           <View style={styles.historyCard}>
             <View style={styles.historyCardRow}>
               <View>
-                <Text style={styles.historyNote}>{selectedFriend.note}</Text>
-                <Text style={styles.historyDate}>Oct 14</Text>
+                <Text style={styles.historyNote}>{selectedFriend.note || '"Shared Expense"'}</Text>
+                <Text style={styles.historyDate}>Recent</Text>
                 <View style={styles.confirmedRow}>
                   <Ionicons name="checkmark-circle-outline" size={14} color="#28a745" />
                   <Text style={styles.confirmedText}>Confirmed</Text>
@@ -134,37 +131,17 @@ export default function HistoryScreen() {
                   {selectedFriend.amount}
                 </Text>
                 <Text style={styles.historyStatus}>
-                  {selectedFriend.isPositive ? `${selectedFriend.name} owes you` : `You owe ${selectedFriend.name}`}
+                  {selectedFriend.isPositive ? `${selectedFriend.name.split(' ')[0]} owes you` : `You owe ${selectedFriend.name.split(' ')[0]}`}
                 </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* A fake past transaction to make the history look full */}
-          <View style={styles.historyCard}>
-            <View style={styles.historyCardRow}>
-              <View>
-                <Text style={styles.historyNote}>"Coffee run ☕"</Text>
-                <Text style={styles.historyDate}>Oct 13</Text>
-                <View style={styles.confirmedRow}>
-                  <Ionicons name="checkmark-circle-outline" size={14} color="#28a745" />
-                  <Text style={styles.confirmedText}>Confirmed</Text>
-                </View>
-              </View>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={[styles.historyAmount, { color: '#dc3545' }]}>-$24.50</Text>
-                <Text style={styles.historyStatus}>You owe {selectedFriend.name}</Text>
               </View>
             </View>
           </View>
         </View>
       </ScrollView>
 
-      {/* --- SETTLE UP MODAL --- */}
       <Modal animationType="slide" transparent={true} visible={settleModalVisible} onRequestClose={() => setSettleModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Settle Up</Text>
               <TouchableOpacity style={styles.closeBtn} onPress={() => setSettleModalVisible(false)}>
@@ -172,7 +149,6 @@ export default function HistoryScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Modal Summary Card */}
             <View style={[styles.modalSummaryCard, !selectedFriend.isPositive && { backgroundColor: '#FFEBEB', borderColor: '#FFD6D6' }]}>
               <View style={[styles.avatar, { backgroundColor: selectedFriend.color, width: 48, height: 48, borderRadius: 24, marginRight: 15 }]}>
                 <Text style={styles.avatarText}>{selectedFriend.initials}</Text>
@@ -188,11 +164,8 @@ export default function HistoryScreen() {
             </View>
 
             <Text style={styles.modalSectionLabel}>REQUEST PAYMENT VIA</Text>
-
             <View style={styles.paymentMethodCard}>
-              <View style={styles.paymentIconBg}>
-                <Ionicons name="cash-outline" size={20} color="#6b4eff" />
-              </View>
+              <View style={styles.paymentIconBg}><Ionicons name="cash-outline" size={20} color="#6b4eff" /></View>
               <View style={styles.paymentMethodDetails}>
                 <Text style={styles.paymentMethodTitle}>E-Transfer</Text>
                 <Text style={styles.paymentMethodSub}>{selectedFriend.name.split(' ')[0].toLowerCase()}@example.com</Text>
@@ -218,7 +191,6 @@ export default function HistoryScreen() {
               <Ionicons name="checkmark-circle-outline" size={20} color="white" style={{ marginRight: 8 }} />
               <Text style={styles.confirmBtnText}>Confirm Paid · ${selectedFriend.rawAmount.toFixed(2)}</Text>
             </TouchableOpacity>
-
           </View>
         </View>
       </Modal>
@@ -228,7 +200,7 @@ export default function HistoryScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f9fc' },
-  header: { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 20, backgroundColor: '#ffffff' },
+  header: { paddingHorizontal: 20, paddingTop: 80, paddingBottom: 20, backgroundColor: '#ffffff' },
   title: { fontSize: 24, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 4 },
   subtitle: { fontSize: 14, color: '#999' },
   listContainer: { padding: 20, paddingBottom: 100 },
@@ -245,9 +217,7 @@ const styles = StyleSheet.create({
   status: { fontSize: 12, color: '#999' },
   settledText: { fontSize: 15, fontWeight: '600', color: '#888' },
   chevron: { marginLeft: 4 },
-
-  /* Friend History Specific Styles */
-  friendHeader: { backgroundColor: '#ffffff', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 20 },
+  friendHeader: { backgroundColor: '#ffffff', paddingHorizontal: 20, paddingTop: 80, paddingBottom: 20 },
   backBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
   backText: { color: '#6b4eff', fontSize: 16, fontWeight: '500' },
   friendProfileInfo: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
@@ -270,8 +240,6 @@ const styles = StyleSheet.create({
   confirmedText: { color: '#28a745', fontSize: 12, marginLeft: 4 },
   historyAmount: { fontSize: 18, fontWeight: 'bold', marginBottom: 6 },
   historyStatus: { fontSize: 12, color: '#999' },
-
-  /* Modal Specific Styles */
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: 'white', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, minHeight: 400 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },

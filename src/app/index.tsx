@@ -11,8 +11,8 @@ import SendScreen from '../screens/SendScreen';
 export default function App() {
   const [activeTab, setActiveTab] = useState('Home');
   const [sendParams, setSendParams] = useState<'they' | 'i'>('they');
+  const [historyFriend, setHistoryFriend] = useState<any>(null);
 
-  // Shared Notifications State
   const [notifications, setNotifications] = useState([
     { id: '1', icon: 'checkmark-circle', iconColor: '#00C875', text: 'Alex Rivera accepted your $25.50 request', time: '2m ago', unread: true },
     { id: '2', icon: 'alarm-outline', iconColor: '#FF4D4D', text: 'Casey Park sent you a reminder to settle up', time: '1h ago', unread: true },
@@ -25,6 +25,14 @@ export default function App() {
 
   const navigateToTab = (tab: string, params?: any) => {
     if (params?.whoOwes) setSendParams(params.whoOwes);
+    
+    // Catch the specific friend routing
+    if (params?.friend) {
+      setHistoryFriend(params.friend);
+    } else if (tab === 'History') {
+      setHistoryFriend(null); // Reset to main history list if just clicking the bottom tab
+    }
+    
     setActiveTab(tab);
   };
 
@@ -32,9 +40,10 @@ export default function App() {
     switch (activeTab) {
       case 'Home': return <HomeScreen onNavigate={navigateToTab} unreadCount={unreadCount} />;
       case 'Notifications': return <NotificationsScreen onBack={() => setActiveTab('Home')} notifications={notifications} setNotifications={setNotifications} />;
-      case 'History': return <HistoryScreen />;
+      // UPDATE THIS LINE BELOW:
+      case 'History': return <HistoryScreen initialFriend={historyFriend} onBack={() => setHistoryFriend(null)} />;
       case 'Send': return <SendScreen initialWhoOwes={sendParams} />;
-      case 'Friends': return <FriendsScreen />;
+      case 'Friends': return <FriendsScreen onNavigate={navigateToTab} />;
       case 'Profile': return <ProfileScreen />;
       default: return <HomeScreen onNavigate={navigateToTab} unreadCount={unreadCount} />;
     }
@@ -54,7 +63,7 @@ export default function App() {
       {activeTab !== 'Notifications' && (
         <View style={styles.tabBar}>
           {tabs.map((tab) => (
-            <TouchableOpacity key={tab.name} style={styles.tabItem} onPress={() => setActiveTab(tab.name)} activeOpacity={0.7}>
+            <TouchableOpacity key={tab.name} style={styles.tabItem} onPress={() => navigateToTab(tab.name)} activeOpacity={0.7}>
               {tab.isCenter ? (
                 <View style={styles.centerButton}><Ionicons name={tab.icon as any} size={28} color="white" /></View>
               ) : (
