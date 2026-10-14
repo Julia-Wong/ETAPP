@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import AuthScreen from '../screens/AuthScreen';
 import FriendsScreen from '../screens/FriendsScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -9,6 +10,9 @@ import ProfileScreen from '../screens/ProfileScreen';
 import SendScreen from '../screens/SendScreen';
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState({ name: 'Jamie Doe', email: 'jamie@example.com' }); // NEW: User State
+
   const [activeTab, setActiveTab] = useState('Home');
   const [sendParams, setSendParams] = useState<'they' | 'i'>('they');
   const [historyFriend, setHistoryFriend] = useState<any>(null);
@@ -25,27 +29,34 @@ export default function App() {
 
   const navigateToTab = (tab: string, params?: any) => {
     if (params?.whoOwes) setSendParams(params.whoOwes);
-    
-    // Catch the specific friend routing
     if (params?.friend) {
       setHistoryFriend(params.friend);
     } else if (tab === 'History') {
-      setHistoryFriend(null); // Reset to main history list if just clicking the bottom tab
+      setHistoryFriend(null); 
     }
-    
     setActiveTab(tab);
   };
 
+  if (!isAuthenticated) {
+    return (
+      <AuthScreen 
+        onLogin={(userData: any) => {
+          setUser(userData);
+          setIsAuthenticated(true);
+        }} 
+      />
+    );
+  }
+
   const renderScreen = () => {
     switch (activeTab) {
-      case 'Home': return <HomeScreen onNavigate={navigateToTab} unreadCount={unreadCount} />;
+      case 'Home': return <HomeScreen onNavigate={navigateToTab} unreadCount={unreadCount} user={user} />;
       case 'Notifications': return <NotificationsScreen onBack={() => setActiveTab('Home')} notifications={notifications} setNotifications={setNotifications} />;
-      // UPDATE THIS LINE BELOW:
       case 'History': return <HistoryScreen initialFriend={historyFriend} onBack={() => setHistoryFriend(null)} />;
       case 'Send': return <SendScreen initialWhoOwes={sendParams} />;
       case 'Friends': return <FriendsScreen onNavigate={navigateToTab} />;
-      case 'Profile': return <ProfileScreen />;
-      default: return <HomeScreen onNavigate={navigateToTab} unreadCount={unreadCount} />;
+      case 'Profile': return <ProfileScreen onLogout={() => setIsAuthenticated(false)} user={user} />;
+      default: return <HomeScreen onNavigate={navigateToTab} unreadCount={unreadCount} user={user} />;
     }
   };
 

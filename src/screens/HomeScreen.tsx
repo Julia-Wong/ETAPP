@@ -2,24 +2,26 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export default function HomeScreen({ onNavigate, unreadCount }: any) {
+export default function HomeScreen({ onNavigate, unreadCount, user }: any) {
   const [modalVisible, setModalVisible] = useState(false);
-  const [showPending, setShowPending] = useState(true); // Tracks if request is resolved
+  const [showPending, setShowPending] = useState(true);
+
+  // Extract just the first name
+  const firstName = user?.name?.split(' ')[0] || 'Jamie';
 
   const handleResolveRequest = () => {
     setModalVisible(false);
-    setShowPending(false); // Hides the pending request from the screen
+    setShowPending(false);
   };
 
   return (
     <>
       <ScrollView style={styles.container} bounces={false} showsVerticalScrollIndicator={false}>
-        {/* Top Purple Section */}
         <View style={styles.headerBackground}>
           <View style={styles.headerTop}>
             <View>
               <Text style={styles.greeting}>Good morning,</Text>
-              <Text style={styles.name}>Jamie 👋</Text>
+              <Text style={styles.name}>{firstName} 👋</Text>
             </View>
             <TouchableOpacity style={styles.notificationBtn} onPress={() => onNavigate('Notifications')}>
               <Ionicons name="notifications-outline" size={24} color="white" />
@@ -47,7 +49,6 @@ export default function HomeScreen({ onNavigate, unreadCount }: any) {
           </View>
         </View>
 
-        {/* Main White Content Area */}
         <View style={styles.mainContent}>
           <View style={styles.actionRow}>
             <TouchableOpacity style={styles.actionItem} onPress={() => onNavigate('Send', { whoOwes: 'i' })}>
@@ -86,7 +87,6 @@ export default function HomeScreen({ onNavigate, unreadCount }: any) {
             </>
           )}
 
-          {/* Friends Section */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Friends</Text>
             <TouchableOpacity onPress={() => onNavigate('Friends')}><Text style={styles.seeAllText}>See all</Text></TouchableOpacity>
@@ -109,7 +109,6 @@ export default function HomeScreen({ onNavigate, unreadCount }: any) {
             </TouchableOpacity>
           </View>
 
-          {/* Recent Activity Section */}
           <Text style={[styles.sectionTitle, { marginTop: 30 }]}>Recent Activity</Text>
           <TouchableOpacity style={styles.activityCard} onPress={() => onNavigate('History')}>
             <View style={[styles.avatar, { backgroundColor: '#9B51E0' }]}><Text style={styles.avatarText}>AR</Text></View>
@@ -130,7 +129,6 @@ export default function HomeScreen({ onNavigate, unreadCount }: any) {
         </View>
       </ScrollView>
 
-      {/* Modal Popup */}
       <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -173,8 +171,8 @@ export default function HomeScreen({ onNavigate, unreadCount }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#6b4eff' },
-  headerBackground: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 40, backgroundColor: '#6b4eff' }, // Removed overlapping z-index
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30, zIndex: 999 }, // Kept z-index for bell
+  headerBackground: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 40, backgroundColor: '#6b4eff' },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30, zIndex: 999 },
   greeting: { color: 'rgba(255, 255, 255, 0.8)', fontSize: 16 },
   name: { color: 'white', fontSize: 28, fontWeight: 'bold', marginTop: 4 },
   notificationBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255, 255, 255, 0.15)', justifyContent: 'center', alignItems: 'center' },
@@ -188,7 +186,7 @@ const styles = StyleSheet.create({
   splitLabel: { color: 'rgba(255, 255, 255, 0.8)', fontSize: 12, marginBottom: 4 },
   owedAmount: { color: '#00E676', fontSize: 18, fontWeight: 'bold' },
   oweAmount: { color: '#FF7A7A', fontSize: 18, fontWeight: 'bold' },
-  mainContent: { backgroundColor: '#ffffff', borderTopLeftRadius: 32, borderTopRightRadius: 32, paddingHorizontal: 20, paddingTop: 30, paddingBottom: 100, marginTop: -20, minHeight: 600, zIndex: 2, elevation: 2 }, // Added z-index so buttons don't get covered
+  mainContent: { backgroundColor: '#ffffff', borderTopLeftRadius: 32, borderTopRightRadius: 32, paddingHorizontal: 20, paddingTop: 30, paddingBottom: 100, marginTop: -20, minHeight: 600, zIndex: 2, elevation: 2 },
   actionRow: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: 'white', padding: 20, borderRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, marginBottom: 30, elevation: 3, marginTop: -60 },
   actionItem: { alignItems: 'center', gap: 8 },
   actionIconBg: { width: 56, height: 56, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },

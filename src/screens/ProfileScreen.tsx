@@ -2,23 +2,28 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-export default function ProfileScreen() {
-  // Navigation State
+export default function ProfileScreen({ onLogout, user }: any) {
   const [currentView, setCurrentView] = useState<'main' | 'PersonalInfo' | 'Settings' | 'PaymentMethods' | 'Refer' | 'Rate'>('main');
 
-  // Form States (Makes the inputs feel real)
-  const [firstName, setFirstName] = useState('Jamie');
-  const [lastName, setLastName] = useState('Doe');
+  // Pre-fill fields with user data
+  const nameParts = user?.name?.split(' ') || ['Jamie', 'Doe'];
+  const initialFirst = nameParts[0] || '';
+  const initialLast = nameParts.slice(1).join(' ') || '';
+
+  const [firstName, setFirstName] = useState(initialFirst);
+  const [lastName, setLastName] = useState(initialLast);
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('jamie@example.com');
+  const [email, setEmail] = useState(user?.email || '');
   const [eTransfer, setETransfer] = useState('');
 
-  // Settings States
   const [pushEnabled, setPushEnabled] = useState(true);
   const [emailEnabled, setEmailEnabled] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
 
-  // --- SUB-SCREEN: PERSONAL INFO ---
+  // initials for avatar
+  const avatarInitials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'JD';
+  const handleString = `@${firstName.toLowerCase()}${lastName.toLowerCase()}`;
+
   if (currentView === 'PersonalInfo') {
     return (
       <ScrollView style={styles.subContainer} showsVerticalScrollIndicator={false}>
@@ -72,7 +77,6 @@ export default function ProfileScreen() {
     );
   }
 
-  // --- SUB-SCREEN: SETTINGS ---
   if (currentView === 'Settings') {
     return (
       <ScrollView style={styles.subContainer} showsVerticalScrollIndicator={false}>
@@ -147,7 +151,6 @@ export default function ProfileScreen() {
     );
   }
 
-  // --- SUB-SCREEN: RECEIVE PAYMENTS (PAYMENT METHODS) ---
   if (currentView === 'PaymentMethods') {
     return (
       <ScrollView style={styles.subContainer} showsVerticalScrollIndicator={false}>
@@ -183,7 +186,7 @@ export default function ProfileScreen() {
               </View>
               <View style={styles.savedPaymentDetails}>
                 <Text style={styles.savedPaymentLabel}>E-Transfer recipient</Text>
-                <Text style={styles.savedPaymentValue}>jamie@example.com</Text>
+                <Text style={styles.savedPaymentValue}>{email || 'jamie@example.com'}</Text>
               </View>
               <TouchableOpacity style={styles.copyIconBtn}>
                 <Ionicons name="copy-outline" size={20} color="#999" />
@@ -206,7 +209,6 @@ export default function ProfileScreen() {
     );
   }
 
-  // --- SUB-SCREEN: REFER A FRIEND ---
   if (currentView === 'Refer') {
     return (
       <View style={styles.subContainer}>
@@ -225,7 +227,6 @@ export default function ProfileScreen() {
     );
   }
 
-  // --- SUB-SCREEN: RATE THE APP ---
   if (currentView === 'Rate') {
     return (
       <View style={styles.subContainer}>
@@ -244,7 +245,6 @@ export default function ProfileScreen() {
     );
   }
 
-  // --- MAIN PROFILE VIEW ---
   return (
     <ScrollView style={styles.container} bounces={false} showsVerticalScrollIndicator={false}>
       <View style={styles.headerBackground}>
@@ -257,18 +257,18 @@ export default function ProfileScreen() {
 
         <View style={styles.userInfoRow}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>JD</Text>
+            <Text style={styles.avatarText}>{avatarInitials}</Text>
           </View>
           <View style={styles.userDetails}>
             <Text style={styles.userName}>{firstName} {lastName}</Text>
-            <Text style={styles.userHandle}>@{firstName.toLowerCase()}{lastName.toLowerCase()}</Text>
+            <Text style={styles.userHandle}>{handleString}</Text>
           </View>
         </View>
 
         <View style={styles.codeCard}>
           <View style={styles.codeInfo}>
             <Text style={styles.codeLabel}>Your Friend Code</Text>
-            <Text style={styles.codeValue}>#JD4821</Text>
+            <Text style={styles.codeValue}>#JX5303</Text>
           </View>
           <TouchableOpacity style={styles.copyBtn}>
             <Ionicons name="copy-outline" size={16} color="white" style={styles.copyIcon} />
@@ -337,7 +337,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.signOutBtn}>
+        <TouchableOpacity style={styles.signOutBtn} onPress={onLogout}>
           <Ionicons name="log-out-outline" size={20} color="#dc3545" style={styles.signOutIcon} />
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
@@ -348,7 +348,6 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  // Main View Styles
   container: { flex: 1, backgroundColor: '#f8f9fc' },
   headerBackground: { backgroundColor: '#6b4eff', paddingTop: 60, paddingHorizontal: 20, paddingBottom: 20 },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 },
@@ -381,17 +380,13 @@ const styles = StyleSheet.create({
   signOutIcon: { marginRight: 8 },
   signOutText: { color: '#dc3545', fontSize: 16, fontWeight: 'bold' },
   bottomSpacer: { height: 120 },
-
-  // Sub-Views Shared Styles
   subContainer: { flex: 1, backgroundColor: '#f8f9fc' },
-  subHeader: { paddingHorizontal: 20, paddingTop: 80, paddingBottom: 20, backgroundColor: 'white' }, // paddingTop 80 fixes notch issue
+  subHeader: { paddingHorizontal: 20, paddingTop: 80, paddingBottom: 20, backgroundColor: 'white' },
   backBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   backText: { color: '#6b4eff', fontSize: 16, fontWeight: '500' },
   subTitle: { fontSize: 24, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 4 },
   subSubtitle: { fontSize: 14, color: '#999' },
   formContent: { padding: 20 },
-  
-  // Forms & Inputs
   inputLabel: { fontSize: 12, color: '#999', fontWeight: 'bold', letterSpacing: 0.5, marginBottom: 8, marginTop: 10 },
   input: { backgroundColor: 'white', borderWidth: 1, borderColor: '#f0f0f0', borderRadius: 16, padding: 16, fontSize: 15, color: '#333', marginBottom: 16 },
   inputWithIcon: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', borderWidth: 1, borderColor: '#f0f0f0', borderRadius: 16, paddingHorizontal: 16, marginBottom: 16 },
@@ -401,8 +396,6 @@ const styles = StyleSheet.create({
   supportNoteText: { fontSize: 13, color: '#999', marginLeft: 6 },
   saveBtn: { backgroundColor: '#6b4eff', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 16, borderRadius: 16 },
   saveBtnText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
-
-  // Settings Toggles
   sectionHeading: { fontSize: 12, color: '#999', fontWeight: 'bold', letterSpacing: 0.5, marginBottom: 12, marginTop: 24 },
   settingsGroup: { backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#f0f0f0' },
   settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
@@ -415,8 +408,6 @@ const styles = StyleSheet.create({
   dropdownText: { fontSize: 15, color: '#1a1a1a', fontWeight: '500' },
   deleteBtnTag: { flexDirection: 'row', alignItems: 'center' },
   deleteBtnText: { color: '#dc3545', fontWeight: 'bold', fontSize: 15 },
-
-  // Payment Methods
   paymentInputRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   paymentSaveBtn: { backgroundColor: '#cbbaf5', paddingHorizontal: 24, paddingVertical: 16, borderRadius: 16 },
   paymentSaveBtnText: { color: 'white', fontWeight: 'bold', fontSize: 15 },
@@ -430,8 +421,6 @@ const styles = StyleSheet.create({
   savedPaymentNote: { fontSize: 13, color: '#666', lineHeight: 18 },
   howItWorksBox: { backgroundColor: '#F5F8FF', padding: 20, borderRadius: 16, marginTop: 30 },
   howItWorksText: { color: '#0047AB', fontSize: 14, lineHeight: 22 },
-
-  // Placeholder Screens
   placeholderContent: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 100 },
   placeholderText: { fontSize: 16, color: '#999', marginTop: 16, fontWeight: '500' }
 });
