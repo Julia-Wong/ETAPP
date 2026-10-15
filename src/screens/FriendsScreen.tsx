@@ -14,6 +14,17 @@ export default function FriendsScreen({ onNavigate }: any) {
     { id: '5', initials: 'CP', name: 'Casey Park', handle: '@caseyp', code: '#CP3304', color: '#00A8FF', amount: '+$22.00', status: 'owes you', isPositive: true, rawAmount: 22.00, note: '"Movie tickets 🎬"' },
   ];
 
+  // Filter friends based on what the user types
+  const filteredFriends = friends.filter((friend) => {
+    const search = searchQuery.trim().toLowerCase();
+
+    return (
+      friend.name.toLowerCase().includes(search) ||
+      friend.handle.toLowerCase().includes(search) ||
+      friend.code.toLowerCase().includes(search)
+    );
+  });
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
@@ -65,7 +76,17 @@ export default function FriendsScreen({ onNavigate }: any) {
         <View style={styles.listSection}>
           <Text style={styles.sectionLabel}>YOUR FRIENDS</Text>
           <View style={styles.friendsList}>
-            {friends.map((friend) => (
+            {filteredFriends.length === 0 && (
+              <Text style={{
+                textAlign: 'center',
+                color: '#999',
+                paddingVertical: 20,
+                fontSize: 14,
+              }}>
+                No friends found
+              </Text>
+            )}
+            {filteredFriends.map((friend) => (
               <View key={friend.id} style={styles.friendItem}>
                 <View style={[styles.avatar, { backgroundColor: friend.color }]}>
                   <Text style={styles.avatarText}>{friend.initials}</Text>
