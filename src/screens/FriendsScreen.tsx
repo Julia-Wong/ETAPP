@@ -1,18 +1,115 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function FriendsScreen({ onNavigate }: any) {
   const [searchQuery, setSearchQuery] = useState('');
   const [addCode, setAddCode] = useState('');
 
-  const friends = [
+  const [friends, setFriends] = useState([
     { id: '1', initials: 'AR', name: 'Alex Rivera', handle: '@alexr', code: '#AR2934', color: '#9B51E0', amount: '+$25.50', status: 'owes you', isPositive: true, rawAmount: 25.50, note: '"Dinner at Nobu 🍣"' },
     { id: '2', initials: 'JL', name: 'Jordan Lee', handle: '@jlee', code: '#JL7823', color: '#00C875', amount: '-$45.50', status: 'you owe', isPositive: false, rawAmount: 45.50, note: '"Lunch split 🍜"' },
     { id: '3', initials: 'SC', name: 'Sam Chen', handle: '@samc', code: '#SC1205', color: '#F5A623', amount: '+$120.00', status: 'owes you', isPositive: true, rawAmount: 120.00, note: '"Rent utilities ⚡"' },
     { id: '4', initials: 'MW', name: 'Morgan Wu', handle: '@mwu', code: '#MW8834', color: '#FF4D4D', amount: '-$18.75', status: 'you owe', isPositive: false, rawAmount: 18.75, note: '"Coffee run ☕"' },
     { id: '5', initials: 'CP', name: 'Casey Park', handle: '@caseyp', code: '#CP3304', color: '#00A8FF', amount: '+$22.00', status: 'owes you', isPositive: true, rawAmount: 22.00, note: '"Movie tickets 🎬"' },
+  ]);
+  
+  // Demo users who can be added as friends
+  const availableUsers = [
+    {
+      id: '6',
+      initials: 'TS',
+      name: 'Taylor Swift',
+      handle: '@taylor',
+      code: '#TS1234',
+      color: '#9B51E0',
+      amount: '$0.00',
+      status: 'settled',
+      isPositive: true,
+      rawAmount: 0,
+      note: 'No transactions yet',
+    },
+    {
+      id: '7',
+      initials: 'OC',
+      name: 'Olivia Chen',
+      handle: '@olivia',
+      code: '#OC5678',
+      color: '#00C875',
+      amount: '$0.00',
+      status: 'settled',
+      isPositive: true,
+      rawAmount: 0,
+      note: 'No transactions yet',
+    },
+    {
+      id: '8',
+      initials: 'EW',
+      name: 'Emma Wilson',
+      handle: '@emma',
+      code: '#EW9012',
+      color: '#F5A623',
+      amount: '$0.00',
+      status: 'settled',
+      isPositive: true,
+      rawAmount: 0,
+      note: 'No transactions yet',
+    },
   ];
+  
+  
+  // Check whether the entered friend code is valid
+  const normalizedCode =
+    '#' + addCode.trim().replace(/^#/, '').toUpperCase();
+
+  const validFriend = availableUsers.find(
+    (user) => user.code.toUpperCase() === normalizedCode
+  );
+
+  const alreadyAdded = friends.some(
+    (friend) => friend.code.toUpperCase() === normalizedCode
+  );
+
+  // Only enable the button for a valid, new friend
+  const canAddFriend = !!validFriend && !alreadyAdded;
+
+  const handleAddFriend = () => {
+    const normalizedCode =
+      '#' + addCode.trim().replace(/^#/, '').toUpperCase();
+
+    if (!addCode.trim()) {
+      Alert.alert('Missing Code', 'Please enter a friend code.');
+      return;
+    }
+
+    // Check whether the user is already a friend
+    const alreadyFriend = friends.some(
+      (friend) => friend.code.toUpperCase() === normalizedCode
+    );
+
+    if (alreadyFriend) {
+      Alert.alert('Already Friends', 'This person is already your friend!');
+      return;
+    }
+
+    // Find the user in our demo directory
+    const foundUser = availableUsers.find(
+      (user) => user.code.toUpperCase() === normalizedCode
+    );
+
+    if (!foundUser) {
+      Alert.alert('Not Found', 'No user exists with that friend code.');
+      return;
+    }
+
+    // Add the new friend to the list
+    setFriends((previousFriends) => [...previousFriends, foundUser]);
+
+    // Clear the input
+    setAddCode('');
+
+    Alert.alert('Success!', `${foundUser.name} has been added as a friend!`);
+  };
 
   // Filter friends based on what the user types
   const filteredFriends = friends.filter((friend) => {
@@ -67,7 +164,14 @@ export default function FriendsScreen({ onNavigate }: any) {
               value={addCode}
               onChangeText={setAddCode}
             />
-            <TouchableOpacity style={styles.addBtn}>
+            <TouchableOpacity
+              style={[
+                styles.addBtn,
+                { backgroundColor: canAddFriend ? '#6b4eff' : '#cbbaf5' }
+              ]}
+              onPress={handleAddFriend}
+              disabled={!canAddFriend}
+            >
               <Text style={styles.addBtnText}>Add</Text>
             </TouchableOpacity>
           </View>
