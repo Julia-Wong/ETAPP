@@ -5,6 +5,11 @@ import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View 
 export default function FriendsScreen({ onNavigate }: any) {
   const [searchQuery, setSearchQuery] = useState('');
   const [addCode, setAddCode] = useState('');
+  
+  const [sentRequests, setSentRequests] = useState<string[]>([]);
+  const [receivedRequests, setReceivedRequests] = useState<string[]>([
+    '8',
+  ]);
 
   const [friends, setFriends] = useState([
     { id: '1', initials: 'AR', name: 'Alex Rivera', handle: '@alexr', code: '#AR2934', color: '#9B51E0', amount: '+$25.50', status: 'owes you', isPositive: true, rawAmount: 25.50, note: '"Dinner at Nobu 🍣"' },
@@ -71,45 +76,88 @@ export default function FriendsScreen({ onNavigate }: any) {
   );
 
   // Only enable the button for a valid, new friend
-  const canAddFriend = !!validFriend && !alreadyAdded;
+  const alreadyRequested = validFriend
+    ? sentRequests.includes(validFriend.id) ||
+      receivedRequests.includes(validFriend.id)
+    : false;
 
-  const handleAddFriend = () => {
-    const normalizedCode =
-      '#' + addCode.trim().replace(/^#/, '').toUpperCase();
+  const canAddFriend =
+    !!validFriend && !alreadyAdded && !alreadyRequested;
 
-    if (!addCode.trim()) {
-      Alert.alert('Missing Code', 'Please enter a friend code.');
-      return;
-    }
+  
+const handleAddFriend = () => {
+  if (!validFriend || !canAddFriend) return;
 
-    // Check whether the user is already a friend
-    const alreadyFriend = friends.some(
-      (friend) => friend.code.toUpperCase() === normalizedCode
-    );
+  setSentRequests((previous) => [
+    ...previous,
+    validFriend.id,
+  ]);
 
-    if (alreadyFriend) {
-      Alert.alert('Already Friends', 'This person is already your friend!');
-      return;
-    }
+  setAddCode('');
 
-    // Find the user in our demo directory
-    const foundUser = availableUsers.find(
-      (user) => user.code.toUpperCase() === normalizedCode
-    );
+  Alert.alert(
+    'Request Sent!',
+    `Friend request sent to ${validFriend.name}.`
+  );
+};
 
-    if (!foundUser) {
-      Alert.alert('Not Found', 'No user exists with that friend code.');
-      return;
-    }
 
-    // Add the new friend to the list
-    setFriends((previousFriends) => [...previousFriends, foundUser]);
+const handleAcceptRequest = (userId: string) => {
+  const user = availableUsers.find(
+    (person) => person.id === userId
+  );
 
-    // Clear the input
-    setAddCode('');
+  if (!user) return;
 
-    Alert.alert('Success!', `${foundUser.name} has been added as a friend!`);
-  };
+  setFriends((previous) =>
+    previous.some((friend) => friend.id === userId)
+      ? previous
+      : [...previous, user]
+  );
+
+  setReceivedRequests((previous) =>
+    previous.filter((id) => id !== userId)
+  );
+
+  Alert.alert('Friend Added!', `You and ${user.name} are now friends.`);
+};
+
+const handleDeclineRequest = (userId: string) => {
+  setReceivedRequests((previous) =>
+    previous.filter((id) => id !== userId)
+  );
+};
+
+const handleCancelRequest = (userId: string) => {
+  setSentRequests((previous) =>
+    previous.filter((id) => id !== userId)
+  );
+};
+
+// Demo only: simulate the other person accepting your request
+const handleSimulateAcceptance = (userId: string) => {
+  const user = availableUsers.find(
+    (person) => person.id === userId
+  );
+
+  if (!user) return;
+
+  setFriends((previous) =>
+    previous.some((friend) => friend.id === userId)
+      ? previous
+      : [...previous, user]
+  );
+
+  setSentRequests((previous) =>
+    previous.filter((id) => id !== userId)
+  );
+
+  Alert.alert(
+    'Request Accepted!',
+    `${user.name} accepted your friend request.`
+  );
+};
+
 
   // Filter friends based on what the user types
   const filteredFriends = friends.filter((friend) => {
@@ -172,10 +220,144 @@ export default function FriendsScreen({ onNavigate }: any) {
               onPress={handleAddFriend}
               disabled={!canAddFriend}
             >
-              <Text style={styles.addBtnText}>Add</Text>
+              <Text style={styles.addBtnText}>Send</Text>
             </TouchableOpacity>
           </View>
         </View>
+
+          
+        {/* FRIEND REQUESTS */}
+        <View style={styles.listSection}>
+          <Text style={styles.sectionLabel}>
+            FRIEND REQUESTS
+          </Text>
+
+          {/* Received Requests */}
+          <Text style={{ fontWeight: '600', marginBottom: 10 }}>
+            Received ({receivedRequests.length})
+          </Text>
+
+          {receivedRequests.map((userId) => {
+            const user = availableUsers.find(
+              (person) => person.id === userId
+            );
+
+            if (!user) return null;
+
+            return (
+              <View key={userId} style={styles.friendItem}>
+                <View
+                  style={[
+                    styles.avatar,
+                    { backgroundColor: user.color },
+                  ]}
+                >
+                  <Text style={styles.avatarText}>
+                    {user.initials}
+                  </Text>
+                </View>
+
+                <View style={styles.friendInfo}>
+                  <Text style={styles.friendName}>
+                    {user.name}
+                  </Text>
+                  <Text style={styles.friendHandle}>
+                    Wants to be friends
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  onPress={() => handleAcceptRequest(userId)}
+                  style={{
+                    backgroundColor: '#6b4eff',
+                    padding: 9,
+                    borderRadius: 8,
+                    marginRight: 5,
+                  }}
+                >
+                  <Text style={{ color: 'white' }}>
+                    Accept
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => handleDeclineRequest(userId)}
+                  style={{ padding: 9 }}
+                >
+                  <Text style={{ color: '#999' }}>
+                    Decline
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+
+          {/* Sent Requests */}
+          <Text
+            style={{
+              fontWeight: '600',
+              marginTop: 20,
+              marginBottom: 10,
+            }}
+          >
+            Sent ({sentRequests.length})
+          </Text>
+
+          {sentRequests.map((userId) => {
+            const user = availableUsers.find(
+              (person) => person.id === userId
+            );
+
+            if (!user) return null;
+
+            return (
+              <View key={userId} style={styles.friendItem}>
+                <View
+                  style={[
+                    styles.avatar,
+                    { backgroundColor: user.color },
+                  ]}
+                >
+                  <Text style={styles.avatarText}>
+                    {user.initials}
+                  </Text>
+                </View>
+
+                <View style={styles.friendInfo}>
+                  <Text style={styles.friendName}>
+                    {user.name}
+                  </Text>
+                  <Text style={styles.friendHandle}>
+                    Pending
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  onPress={() => handleSimulateAcceptance(userId)}
+                  style={{
+                    backgroundColor: '#6b4eff',
+                    padding: 9,
+                    borderRadius: 8,
+                    marginRight: 5,
+                  }}
+                >
+                  <Text style={{ color: 'white' }}>
+                    Demo Accept
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => handleCancelRequest(userId)}
+                >
+                  <Text style={{ color: '#999' }}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+        </View>
+
 
         <View style={styles.listSection}>
           <Text style={styles.sectionLabel}>YOUR FRIENDS</Text>
