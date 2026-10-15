@@ -1,3 +1,6 @@
+import { useEffect } from 'react';
+import { supabase } from '../services/supabase';
+
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -10,6 +13,18 @@ import ProfileScreen from '../screens/ProfileScreen';
 import SendScreen from '../screens/SendScreen';
 
 export default function App() {
+  useEffect(() => {
+    const testConnection = async () => {
+      const { error } = await supabase.auth.getSession();
+      if (error) {
+        console.log("❌ Connection failed:", error.message);
+      } else {
+        console.log("✅ Supabase is connected and ready!");
+      }
+    };
+    testConnection();
+  }, []);
+  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState({ name: 'Jamie Doe', email: 'jamie@example.com' }); 
 
