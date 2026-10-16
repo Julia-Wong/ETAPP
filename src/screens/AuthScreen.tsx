@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { supabase } from '../services/supabase';
 
 export default function AuthScreen({ onLogin }: any) {
   const [view, setView] = useState<'landing' | 'login' | 'signup' | 'welcome'>('landing');
@@ -18,6 +19,49 @@ export default function AuthScreen({ onLogin }: any) {
       name: fullName || 'Jamie Doe',
       email: email || 'jamie@example.com'
     });
+  };
+
+  const handleSignUp = async () => {
+    // 1. Create the secure login account
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+    });
+    
+    if (authError) {
+      alert(authError.message);
+      return; // Stop here if there's an error
+    }
+
+    // 2. Save their actual name to your database table
+    if (authData.user) {
+      const { error: dbError } = await supabase
+        .from('users')
+        .insert([
+          { id: authData.user.id, name: fullName, email: email }
+        ]);
+        
+      if (dbError) {
+        console.log("Error saving name:", dbError.message);
+      }
+    }
+
+    // 3. Move to the welcome screen
+    setView('welcome'); 
+  };
+
+  const handleLogin = async () => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
+    
+    if (error) {
+      alert(error.message);
+    } else {
+      // If successful, trigger your app's main entry function!
+      handleFinishLogin(); 
+    }
   };
 
   if (view === 'landing') {
@@ -73,7 +117,7 @@ export default function AuthScreen({ onLogin }: any) {
           </View>
         </View>
         <View style={styles.bottomFixed}>
-          <TouchableOpacity style={styles.primaryBtnPurple} onPress={handleFinishLogin}>
+          <TouchableOpacity style={styles.primaryBtnPurple} onPress={handleLogin}>
             <Text style={styles.primaryBtnPurpleText}>Sign In</Text>
           </TouchableOpacity>
         </View>
@@ -106,7 +150,7 @@ export default function AuthScreen({ onLogin }: any) {
           </View>
         </View>
         <View style={styles.bottomFixed}>
-          <TouchableOpacity style={styles.primaryBtnPurple} onPress={() => setView('welcome')}>
+          <TouchableOpacity style={styles.primaryBtnPurple} onPress={handleSignUp}>
             <Text style={styles.primaryBtnPurpleText}>Create Account</Text>
           </TouchableOpacity>
         </View>

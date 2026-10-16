@@ -13,20 +13,34 @@ import ProfileScreen from '../screens/ProfileScreen';
 import SendScreen from '../screens/SendScreen';
 
 export default function App() {
-  useEffect(() => {
-    const testConnection = async () => {
-      const { error } = await supabase.auth.getSession();
-      if (error) {
-        console.log("❌ Connection failed:", error.message);
-      } else {
-        console.log("✅ Supabase is connected and ready!");
-      }
-    };
-    testConnection();
-  }, []);
-  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState({ name: 'Jamie Doe', email: 'jamie@example.com' }); 
+  const [session, setSession] = useState<any>(null);
+  const [user, setUser] = useState({ name: '', email: '' });
+
+  useEffect(() => {
+    const fetchProfile = async (userId: string) => {
+      const { data } = await supabase
+        .from('users')
+        .select('name, email')
+        .eq('id', userId)
+        .single();
+      if (data) setUser(data);
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsAuthenticated(!!session);
+      if (session) fetchProfile(session.user.id);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setIsAuthenticated(!!session);
+      if (session) fetchProfile(session.user.id);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // --- GLOBAL STATE MEMORY ---
   const [hasPending, setHasPending] = useState(true);
