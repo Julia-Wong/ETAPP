@@ -52,9 +52,7 @@ export default function AuthScreen({
 
     // 3. Move to the welcome screen
     setView('welcome'); 
-  };
-
-  
+  }; 
     
   const handleLogin = async () => {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -232,7 +230,7 @@ export default function AuthScreen({
           </View>
         </View>
         <View style={styles.bottomFixed}>
-          <TouchableOpacity style={styles.primaryBtnPurple} onPress={handleFinishLogin}>
+          <TouchableOpacity style={styles.primaryBtnPurple} onPress={handleLogin}>
             <Text style={styles.primaryBtnPurpleText}>Sign In</Text>
           </TouchableOpacity>
         </View>
@@ -265,7 +263,7 @@ export default function AuthScreen({
           </View>
         </View>
         <View style={styles.bottomFixed}>
-          <TouchableOpacity style={styles.primaryBtnPurple} onPress={() => setView('welcome')}>
+          <TouchableOpacity style={styles.primaryBtnPurple} onPress={handleSignUp}>
             <Text style={styles.primaryBtnPurpleText}>Create Account</Text>
           </TouchableOpacity>
         </View>
