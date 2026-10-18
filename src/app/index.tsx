@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import AuthScreen from '../screens/AuthScreen';
 import FriendsScreen from '../screens/FriendsScreen';
@@ -8,10 +8,73 @@ import HomeScreen from '../screens/HomeScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SendScreen from '../screens/SendScreen';
+import { supabase } from '../services/supabase';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState({ name: 'Jamie Doe', email: 'jamie@example.com' }); 
+  const [session, setSession] = useState<any>(null);
+  const [user, setUser] = useState({ name: '', email: '' });
+  const [authLoading, setAuthLoading] = useState(true);
+  const [needsProfile, setNeedsProfile] = useState(false);
+
+  
+useEffect(() => {
+  let active = true;
+
+  const checkSession = async () => {
+    setAuthLoading(true);
+
+    const { data: { user: authUser }, error: authError } =
+      await supabase.auth.getUser();
+
+    if (!active) return;
+
+    if (authError || !authUser) {
+      setIsAuthenticated(false);
+      setNeedsProfile(false);
+      setAuthLoading(false);
+      return;
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('name, email')
+      .eq('id', authUser.id)
+      .maybeSingle();
+
+    if (!active) return;
+
+    if (profileError) {
+      console.log('Profile check error:', profileError.message);
+      setIsAuthenticated(false);
+      setNeedsProfile(false);
+    } else if (!profile) {
+      setIsAuthenticated(false);
+      setNeedsProfile(true);
+    } else {
+      setUser(profile);
+      setNeedsProfile(false);
+      setIsAuthenticated(true);
+    }
+
+    setAuthLoading(false);
+  };
+
+  checkSession();
+
+  const { data: { subscription } } =
+    supabase.auth.onAuthStateChange(() => {
+      // Defer database queries outside the auth callback.
+      setTimeout(() => {
+        if (active) checkSession();
+      }, 0);
+    });
+
+  return () => {
+    active = false;
+    subscription.unsubscribe();
+  };
+}, []);
 
   // --- GLOBAL STATE MEMORY ---
   const [hasPending, setHasPending] = useState(true);
@@ -53,8 +116,28 @@ export default function App() {
     setActiveTab(tab);
   };
 
+  
+  if (authLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={{ textAlign: 'center', marginTop: 80 }}>
+          Loading your account...
+        </Text>
+      </SafeAreaView>
+    );
+  }
+
   if (!isAuthenticated) {
-    return <AuthScreen onLogin={(userData: any) => { setUser(userData); setIsAuthenticated(true); }} />;
+    return (
+      <AuthScreen
+        startOnCompleteProfile={needsProfile}
+        onLogin={(userData: any) => {
+          setUser(userData);
+          setNeedsProfile(false);
+          setIsAuthenticated(true);
+        }}
+      />
+    );
   }
 
   const renderScreen = () => {
