@@ -115,11 +115,16 @@ export default function AuthScreen({
 
       const { error: saveError } = await supabase
         .from('users')
-        .insert({
-          id: user.id,
-          name: name,
-          email: user.email,
-        });
+        .upsert(
+          {
+            id: user.id,
+            name: name,
+            email: user.email,
+          },
+          {
+            onConflict: 'id',
+          }
+        );
 
       if (saveError) {
         alert('Could not save profile: ' + saveError.message);
