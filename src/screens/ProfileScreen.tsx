@@ -1,8 +1,61 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
+import { useEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { supabase } from '../services/supabase';
 
-export default function ProfileScreen({ onLogout, user }: any) {
+export default function ProfileScreen({ onLogout, user }: any) {    
+  const [myFriendCode, setMyFriendCode] = useState('');
+  const handleCopyCode = async () => {
+    if (!myFriendCode) {
+      Alert.alert('Please wait', 'Your friend code is still loading.');
+      return;
+    }
+
+    await Clipboard.setStringAsync(myFriendCode);
+    Alert.alert('Copied!', 'Your friend code has been copied.');
+  };
+  const [friendCodeError, setFriendCodeError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    const loadFriendCode = async () => {
+      const { data: { user: authUser }, error: authError } =
+        await supabase.auth.getUser();
+
+      if (!active) return;
+
+      if (authError || !authUser) {
+        setFriendCodeError('Please sign in again.');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('friend_code')
+        .eq('id', authUser.id)
+        .single();
+
+      if (!active) return;
+
+      if (error || !data?.friend_code) {
+        setFriendCodeError('Could not load code');
+        console.log('Profile friend code error:', error?.message);
+        return;
+      }
+
+      setMyFriendCode(data.friend_code);
+      setFriendCodeError('');
+    };
+
+    loadFriendCode();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const [currentView, setCurrentView] = useState<'main' | 'PersonalInfo' | 'Settings' | 'PaymentMethods' | 'Refer' | 'Rate'>('main');
 
   const nameParts = user?.name?.split(' ') || ['Jamie', 'Doe'];
@@ -277,9 +330,12 @@ export default function ProfileScreen({ onLogout, user }: any) {
         <View style={styles.codeCard}>
           <View style={styles.codeInfo}>
             <Text style={styles.codeLabel}>Your Friend Code</Text>
-            <Text style={styles.codeValue}>#JX5303</Text>
+            <Text style={styles.codeValue}>{friendCodeError || myFriendCode || 'Loading...'}</Text>
           </View>
-          <TouchableOpacity style={styles.copyBtn}>
+          <TouchableOpacity
+            style={styles.copyBtn}
+            onPress={handleCopyCode}
+          >
             <Ionicons name="copy-outline" size={16} color="white" style={styles.copyIcon} />
             <Text style={styles.copyText}>Copy</Text>
           </TouchableOpacity>

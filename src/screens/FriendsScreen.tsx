@@ -1,8 +1,66 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import * as Clipboard from 'expo-clipboard';
+import { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { supabase } from '../services/supabase';
 
 export default function FriendsScreen({ onNavigate }: any) {
+  const [myFriendCode, setMyFriendCode] = useState('');
+  const handleCopyCode = async () => {
+    if (!myFriendCode) {
+      Alert.alert('Please wait', 'Your friend code is still loading.');
+      return;
+    }
+
+    try {
+      await Clipboard.setStringAsync(myFriendCode);
+      Alert.alert('Copied!', `Copied ${myFriendCode}`);
+    } catch (error) {
+      console.log('Clipboard error:', error);
+      Alert.alert('Error', 'Could not copy your friend code.');
+    }
+  };
+  const [friendCodeError, setFriendCodeError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    const loadFriendCode = async () => {
+      const { data: { user }, error: authError } =
+        await supabase.auth.getUser();
+
+      if (!active) return;
+
+      if (authError || !user) {
+        setFriendCodeError('Please sign in again.');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('friend_code')
+        .eq('id', user.id)
+        .single();
+
+      if (!active) return;
+
+      if (error || !data?.friend_code) {
+        setFriendCodeError('Could not load friend code.');
+        console.log('Friend code error:', error?.message);
+        return;
+      }
+
+      setMyFriendCode(data.friend_code);
+      setFriendCodeError('');
+    };
+
+    loadFriendCode();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [addCode, setAddCode] = useState('');
   
@@ -193,9 +251,12 @@ const handleSimulateAcceptance = (userId: string) => {
           <View style={styles.codeHeaderRow}>
             <View>
               <Text style={styles.codeLabel}>YOUR FRIEND CODE</Text>
-              <Text style={styles.codeValue}>#JD4821</Text>
+              <Text style={styles.codeValue}>{friendCodeError || myFriendCode || 'Loading...'}</Text>
             </View>
-            <TouchableOpacity style={styles.copyBtn}>
+            <TouchableOpacity
+              style={styles.copyBtn}
+              onPress={handleCopyCode}
+            >
               <Ionicons name="copy-outline" size={20} color="white" />
             </TouchableOpacity>
           </View>

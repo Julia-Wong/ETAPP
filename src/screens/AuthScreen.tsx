@@ -3,13 +3,17 @@ import { useState } from 'react';
 import { SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../services/supabase';
 
-export default function AuthScreen({ onLogin }: any) {
-  const [view, setView] = useState<'landing' | 'login' | 'signup' | 'welcome'>('landing');
+export default function AuthScreen({
+  onLogin,
+  startOnCompleteProfile = false,
+}: any) {
+  const [view, setView] = useState<'landing' | 'login' | 'signup' | 'welcome' | 'completeProfile'>(startOnCompleteProfile ? 'completeProfile' : 'landing');
   const [showPassword, setShowPassword] = useState(false);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   const displayFirstName = fullName ? fullName.split(' ')[0] : 'Jamie';
 
@@ -48,21 +52,130 @@ export default function AuthScreen({ onLogin }: any) {
 
     // 3. Move to the welcome screen
     setView('welcome'); 
-  };
-
+  }; 
+    
   const handleLogin = async () => {
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
+      email: email.trim(),
+      password,
     });
-    
+
     if (error) {
       alert(error.message);
-    } else {
-      // If successful, trigger your app's main entry function!
-      handleFinishLogin(); 
+      return;
+    }
+
+    if (!data.user) {
+      alert('Unable to find your account.');
+      return;
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('id, name, email')
+      .eq('id', data.user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      alert('Could not check your profile: ' + profileError.message);
+      return;
+    }
+
+    if (!profile) {
+      setView('completeProfile');
+      return;
+    }
+
+    onLogin({
+      name: profile.name,
+      email: profile.email,
+    });
+  };
+
+  const handleSaveProfile = async () => {
+    const name = fullName.trim();
+
+    if (!name) {
+      alert('Please enter your name.');
+      return;
+    }
+
+    setIsSavingProfile(true);
+
+    try {
+      const { data: { user }, error: userError } =
+        await supabase.auth.getUser();
+
+      if (userError || !user || !user.email) {
+        alert('Please sign in again.');
+        return;
+      }
+
+      const { error: saveError } = await supabase
+        .from('users')
+        .upsert(
+          {
+            id: user.id,
+            name: name,
+            email: user.email,
+          },
+          {
+            onConflict: 'id',
+          }
+        );
+
+      if (saveError) {
+        alert('Could not save profile: ' + saveError.message);
+        return;
+      }
+
+      onLogin({
+        name: name,
+        email: user.email,
+      });
+    } finally {
+      setIsSavingProfile(false);
     }
   };
+
+  
+  if (view === 'completeProfile') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Complete Your Profile</Text>
+          <Text style={styles.subtitle}>
+            Just one more step before you start splitting!
+          </Text>
+        </View>
+
+        <View style={styles.form}>
+          <Text style={styles.inputLabel}>YOUR NAME</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your full name"
+            placeholderTextColor="#999"
+            value={fullName}
+            onChangeText={setFullName}
+            autoCapitalize="words"
+          />
+        </View>
+
+        <View style={styles.bottomFixed}>
+          <TouchableOpacity
+            style={styles.primaryBtnPurple}
+            onPress={handleSaveProfile}
+            disabled={isSavingProfile}
+          >
+            <Text style={styles.primaryBtnPurpleText}>
+              {isSavingProfile ? 'Saving...' : 'Continue'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (view === 'landing') {
     return (
