@@ -1,10 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../services/supabase';
 
 export default function ProfileScreen({ onLogout, user }: any) {    
   const [myFriendCode, setMyFriendCode] = useState('');
+  const handleCopyCode = async () => {
+    if (!myFriendCode) {
+      Alert.alert('Please wait', 'Your friend code is still loading.');
+      return;
+    }
+
+    await Clipboard.setStringAsync(myFriendCode);
+    Alert.alert('Copied!', 'Your friend code has been copied.');
+  };
   const [friendCodeError, setFriendCodeError] = useState('');
 
   useEffect(() => {
@@ -322,7 +332,10 @@ export default function ProfileScreen({ onLogout, user }: any) {
             <Text style={styles.codeLabel}>Your Friend Code</Text>
             <Text style={styles.codeValue}>{friendCodeError || myFriendCode || 'Loading...'}</Text>
           </View>
-          <TouchableOpacity style={styles.copyBtn}>
+          <TouchableOpacity
+            style={styles.copyBtn}
+            onPress={handleCopyCode}
+          >
             <Ionicons name="copy-outline" size={16} color="white" style={styles.copyIcon} />
             <Text style={styles.copyText}>Copy</Text>
           </TouchableOpacity>
